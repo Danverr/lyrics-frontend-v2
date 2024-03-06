@@ -309,12 +309,12 @@ export class HttpClient<SecurityDataType = unknown> {
 				const claims = jose.decodeJwt(jwt);
 
 				if (claims.exp === undefined || Date.now() / 1000 >= claims.exp) {
-					document.location.href = FE_AUTH_PAGE;
+					window.location.href = FE_AUTH_PAGE;
 				}
 
 				config.headers.setAuthorization(`Bearer ${jwt}`, true);
 			} else if (config.url !== undefined && !config.url.startsWith('/auth')) {
-				document.location.href = FE_AUTH_PAGE;
+				window.location.href = FE_AUTH_PAGE;
 			}
 			return config;
 		});

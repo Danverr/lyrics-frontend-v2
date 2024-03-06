@@ -9,11 +9,19 @@
 	import { Button } from '$lib/components/ui/button';
 	import { toast } from 'svelte-sonner';
 	import { Toaster } from '$lib/components/ui/sonner';
+	import { Skeleton } from '$lib/components/ui/skeleton';
 
 	let projects: ProjectOut[] = [];
+	let dataLoaded = false;
 
 	onMount(async () => {
-		projects = await api.projects.getProjects();
+		try {
+			projects = await api.projects.getProjects();
+		} catch (e) {
+			toast('Ошибка во время загрузки проектов');
+		} finally {
+			dataLoaded = true;
+		}
 	});
 
 	const createProject = async () => {
@@ -66,6 +74,11 @@
 			</Button>
 		</div>
 		<div class="flex flex-col gap-1">
+			{#if !dataLoaded}
+				<Skeleton class="h-9 w-full" />
+				<Skeleton class="h-9 w-full" />
+				<Skeleton class="h-9 w-full" />
+			{/if}
 			{#each [...projects].reverse() as project (project.project_id)}
 				<div class="flex justify-between">
 					<Button

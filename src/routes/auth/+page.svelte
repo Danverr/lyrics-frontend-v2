@@ -39,6 +39,11 @@
 	}
 
 	onMount(async () => {
+		if (appStore.getUserToken() !== '') {
+			window.location.href = FE_BASE_URL + '/projects';
+			return;
+		}
+
 		if ('YaAuthSuggest' in window) {
 			try {
 				// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -64,7 +69,7 @@
 				try {
 					let res = await api.auth.authWithYandexToken(data);
 					appStore.setUserToken(res.access_token);
-					document.location.href = FE_BASE_URL + '/projects';
+					window.location.href = FE_BASE_URL + '/projects';
 				} catch (e) {
 					toast.error('Ошибка при авторизации');
 				}
@@ -109,7 +114,7 @@
 				password: $formData.code.toString()
 			});
 			appStore.setUserToken(res.access_token);
-			document.location.href = FE_BASE_URL + '/projects';
+			window.location.href = FE_BASE_URL + '/projects';
 		} catch (e: unknown) {
 			if (typeof e === 'string') {
 				$errors.code = [e as string];
