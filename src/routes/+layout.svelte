@@ -1,6 +1,6 @@
 <script context="module" lang="ts">
 	import { ModeWatcher } from 'mode-watcher';
-	import { ThemeToggle } from '$lib/components/ui/theme-toggle';
+	import { ThemeToggle } from '../lib/components/theme-toggle';
 	import '../app.pcss';
 
 	export let ssr = false;

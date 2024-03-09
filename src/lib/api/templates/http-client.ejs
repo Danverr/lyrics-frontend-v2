@@ -3,8 +3,8 @@ const { apiConfig, generateResponses, config } = it;
 %>
 
 import type { AxiosInstance, AxiosRequestConfig, HeadersDefaults, ResponseType, AxiosResponse } from "axios";
-import { appStore } from '$lib/app-store';
-import { FE_AUTH_PAGE } from '$lib/constants';
+import { CURRENT_TOKEN_KEY } from '$lib/stores/localStorage';
+import { FE_AUTH_PAGE } from '$lib/api/constants';
 import * as jose from 'jose';
 import axios from "axios";
 
@@ -50,9 +50,11 @@ export class HttpClient<SecurityDataType = unknown> {
     constructor({ securityWorker, secure, format, ...axiosConfig }: ApiConfig<SecurityDataType> = {}) {
         this.instance = axios.create({ ...axiosConfig, baseURL: axiosConfig.baseURL || "<%~ apiConfig.baseUrl %>" })
         this.instance.interceptors.request.use((config) => {
-            const jwt = appStore.getUserToken();
+                const jwt: string | null = localStorage.getItem(CURRENT_TOKEN_KEY)
+                ? JSON.parse(localStorage.getItem(CURRENT_TOKEN_KEY) as string)
+                : null;
 
-            if (jwt !== null) {
+                if (jwt !== null && jwt !== '') {
                 const claims = jose.decodeJwt(jwt);
 
                 if (claims.exp === undefined || Date.now() / 1000 >= claims.exp) {

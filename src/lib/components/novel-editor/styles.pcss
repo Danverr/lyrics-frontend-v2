@@ -1,0 +1,193 @@
+:root {
+	--novel-black: rgb(0 0 0);
+	--novel-white: rgb(255 255 255);
+	--novel-stone-50: rgb(250 250 249);
+	--novel-stone-100: rgb(245 245 244);
+	--novel-stone-200: rgb(231 229 228);
+	--novel-stone-300: rgb(214 211 209);
+	--novel-stone-400: rgb(168 162 158);
+	--novel-stone-500: rgb(120 113 108);
+	--novel-stone-600: rgb(87 83 78);
+	--novel-stone-700: rgb(68 64 60);
+	--novel-stone-800: rgb(41 37 36);
+	--novel-stone-900: rgb(28 25 23);
+
+	--novel-highlight-default: #ffffff;
+	--novel-highlight-purple: #f6f3f8;
+	--novel-highlight-red: #fdebeb;
+	--novel-highlight-yellow: #fbf4a2;
+	--novel-highlight-blue: #c1ecf9;
+	--novel-highlight-green: #acf79f;
+	--novel-highlight-orange: #faebdd;
+	--novel-highlight-pink: #faf1f5;
+	--novel-highlight-gray: #f1f1ef;
+
+	--font-title: 'Cal Sans', sans-serif;
+}
+
+.dark-theme {
+	--novel-black: rgb(255 255 255);
+	--novel-white: rgb(25 25 25);
+	--novel-stone-50: rgb(35 35 34);
+	--novel-stone-100: rgb(41 37 36);
+	--novel-stone-200: rgb(66 69 71);
+	--novel-stone-300: rgb(112 118 123);
+	--novel-stone-400: rgb(160 167 173);
+	--novel-stone-500: rgb(193 199 204);
+	--novel-stone-600: rgb(212 217 221);
+	--novel-stone-700: rgb(229 232 235);
+	--novel-stone-800: rgb(232 234 235);
+	--novel-stone-900: rgb(240, 240, 241);
+
+	--novel-highlight-default: #000000;
+	--novel-highlight-purple: #3f2c4b;
+	--novel-highlight-red: #5c1a1a;
+	--novel-highlight-yellow: #5c4b1a;
+	--novel-highlight-blue: #1a3d5c;
+	--novel-highlight-green: #1a5c20;
+	--novel-highlight-orange: #5c3a1a;
+	--novel-highlight-pink: #5c1a3a;
+	--novel-highlight-gray: #3a3a3a;
+}
+
+.ProseMirror {
+	height: 100%;
+}
+
+.ProseMirror .is-editor-empty:first-child::before {
+	content: attr(data-placeholder);
+	float: left;
+	color: var(--novel-stone-400);
+	pointer-events: none;
+	height: 0;
+}
+.ProseMirror .is-empty::before {
+	content: attr(data-placeholder);
+	float: left;
+	color: var(--novel-stone-400);
+	pointer-events: none;
+	height: 0;
+}
+
+/* Custom image styles */
+.ProseMirror img {
+	transition: filter 0.1s ease-in-out;
+
+	&:hover {
+		cursor: pointer;
+		filter: brightness(90%);
+	}
+
+	&.ProseMirror-selectednode {
+		outline: 3px solid #5abbf7;
+		filter: brightness(90%);
+	}
+}
+
+.img-placeholder {
+	position: relative;
+
+	&:before {
+		content: '';
+		box-sizing: border-box;
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 36px;
+		height: 36px;
+		border-radius: 50%;
+		border: 3px solid var(--novel-stone-200);
+		border-top-color: var(--novel-stone-800);
+		animation: spinning 0.6s linear infinite;
+	}
+}
+
+@keyframes spinning {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Checklist */
+ul[data-type='taskList'] li > label {
+	margin-right: 0.2rem;
+	user-select: none;
+}
+
+@media screen and (max-width: 768px) {
+	ul[data-type='taskList'] li > label {
+		margin-right: 0.5rem;
+	}
+}
+
+ul[data-type='taskList'] li > label input[type='checkbox'] {
+	@apply bg-background rounded border-[1.5px] border-foreground m-0;
+	-webkit-appearance: none;
+	appearance: none;
+	cursor: pointer;
+	width: 1.2em;
+	height: 1.2em;
+	margin-right: 0.3rem;
+	display: grid;
+	place-content: center;
+
+	&:hover, &:active {
+		@apply bg-muted
+	}
+
+	&::before {
+		content: '';
+		width: 0.65em;
+		height: 0.65em;
+		transform: scale(0);
+		transition: 120ms transform ease-in-out;
+		box-shadow: inset 1em 1em;
+		transform-origin: center;
+		clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+	}
+
+	&:checked::before {
+		transform: scale(1);
+	}
+}
+
+ul[data-type='taskList'] li[data-checked='true'] > div > p {
+	@apply text-muted-foreground;
+	text-decoration: line-through;
+	text-decoration-thickness: 2px;
+}
+
+/* Lists */
+.ProseMirror > ol, .ProseMirror > ul {
+	@apply my-4
+}
+
+/* Overwrite tippy-box original max-width */
+.tippy-box {
+	max-width: 400px !important;
+}
+
+/* Typography */
+.ProseMirror h1 {
+  @apply text-3xl py-[3px] px-[2px] mt-8 mb-1 font-bold tracking-tight
+}
+
+.ProseMirror h2 {
+  @apply text-2xl py-[3px] px-[2px] mt-5 font-semibold tracking-tight
+}
+
+.ProseMirror h3 {
+  @apply text-xl py-[3px] px-[2px] mt-4  font-semibold tracking-tight
+}
+
+.ProseMirror p {
+  @apply leading-7 py-[3px] px-[2px] mt-[1px]
+}
+
+.ProseMirror a {
+  @apply font-medium text-primary underline underline-offset-4
+}
+
+.ProseMirror blockquote {
+  @apply mt-6 border-l-2 pl-6 italic
+}

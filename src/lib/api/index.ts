@@ -1,4 +1,4 @@
-import { BE_BASE_URL } from '$lib/constants';
+import { BE_BASE_URL } from '$lib/api/constants';
 import { Api } from './api';
 
 const api = new Api({

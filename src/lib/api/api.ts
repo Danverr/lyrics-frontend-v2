@@ -146,10 +146,10 @@ export interface TextVariant {
 	 */
 	text_id: string;
 	/**
-	 * Text
-	 * Текст
+	 * Payload
+	 * JSON с текстом
 	 */
-	text: string;
+	payload: object;
 }
 
 /**
@@ -199,10 +199,10 @@ export interface TextVariantWithoutID {
 	 */
 	name?: string | null;
 	/**
-	 * Text
-	 * Текст
+	 * Payload
+	 * JSON с текстом
 	 */
-	text?: string | null;
+	payload?: object | null;
 }
 
 /** Token */
@@ -249,8 +249,8 @@ export interface WordMeaning {
 	source: string;
 }
 
-import { appStore } from '$lib/app-store';
-import { FE_AUTH_PAGE } from '$lib/constants';
+import { FE_AUTH_PAGE } from '$lib/api/constants';
+import { CURRENT_TOKEN_KEY } from '$lib/stores/localStorage';
 import type { AxiosInstance, AxiosRequestConfig, HeadersDefaults, ResponseType } from 'axios';
 import axios from 'axios';
 import * as jose from 'jose';
@@ -303,9 +303,11 @@ export class HttpClient<SecurityDataType = unknown> {
 	) {
 		this.instance = axios.create({ ...axiosConfig, baseURL: axiosConfig.baseURL || '' });
 		this.instance.interceptors.request.use((config) => {
-			const jwt = appStore.getUserToken();
+			const jwt: string | null = localStorage.getItem(CURRENT_TOKEN_KEY)
+				? JSON.parse(localStorage.getItem(CURRENT_TOKEN_KEY) as string)
+				: null;
 
-			if (jwt !== null) {
+			if (jwt !== null && jwt !== '') {
 				const claims = jose.decodeJwt(jwt);
 
 				if (claims.exp === undefined || Date.now() / 1000 >= claims.exp) {
@@ -407,7 +409,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title Lyrics IDE Backend
- * @version 0.5.0
+ * @version 1.0.0
  */
 export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDataType> {
 	auth = {

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { FE_AUTH_PAGE, FE_BASE_URL } from '$lib/constants.js';
-	import { appStore } from '$lib/app-store';
+	import { FE_AUTH_PAGE, FE_BASE_URL } from '$lib/api/constants.js';
 	import SendArrow from '~icons/fluent/send-20-filled';
 	import { Button } from '$lib/components/ui/button';
 	import {
@@ -20,6 +19,9 @@
 	import { toast } from 'svelte-sonner';
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { mode } from 'mode-watcher';
+	import { createLocalStorageStore, CURRENT_TOKEN_KEY } from '$lib/stores/localStorage';
+
+	let authToken = createLocalStorageStore(CURRENT_TOKEN_KEY, '');
 
 	export const formSchema = z.object({
 		email: z.string().min(1).max(64).email('Неверный email'),
@@ -39,7 +41,7 @@
 	}
 
 	onMount(async () => {
-		if (appStore.getUserToken() !== '') {
+		if ($authToken !== '') {
 			window.location.href = FE_BASE_URL + '/projects';
 			return;
 		}
@@ -68,7 +70,7 @@
 
 				try {
 					let res = await api.auth.authWithYandexToken(data);
-					appStore.setUserToken(res.access_token);
+					authToken.set(res.access_token);
 					window.location.href = FE_BASE_URL + '/projects';
 				} catch (e) {
 					toast.error('Ошибка при авторизации');
@@ -77,7 +79,6 @@
 				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			} catch (error: any) {
 				console.log('Что-то пошло не так: ', error);
-				document.body.innerHTML += `Что-то пошло не так: ${JSON.stringify(error)}`;
 			}
 		}
 	});
@@ -100,7 +101,7 @@
 			resendCodeCountdown = 60;
 			updateResendCodeCountdown();
 		} catch (e: unknown) {
-			$errors.email = ['Неверный email'];
+			$errors.email = ['Неправильный email или что-то пошло не так'];
 		} finally {
 			isFetching = false;
 		}
@@ -113,7 +114,7 @@
 				username: $formData.email,
 				password: $formData.code.toString()
 			});
-			appStore.setUserToken(res.access_token);
+			authToken.set(res.access_token);
 			window.location.href = FE_BASE_URL + '/projects';
 		} catch (e: unknown) {
 			if (typeof e === 'string') {
