@@ -11,14 +11,11 @@ import {
 	Heading3,
 	List,
 	ListOrdered,
-	MessageSquarePlus,
 	Text,
-	TextQuote
+	TextQuote,
+	Feather
 } from 'lucide-svelte';
 import CommandList from './SlashCommand.svelte';
-// import { toast } from 'sonner';
-// import va from '@vercel/analytics';
-// import { startImageUpload } from '@/ui/editor/plugins/upload-images';
 import { Magic } from '../../ui/icons';
 import type { SvelteComponent } from 'svelte';
 
@@ -73,6 +70,24 @@ const getSuggestionItems = ({ query }: { query: string }) => {
 		// 	}
 		// },
 		{
+			title: 'Текст',
+			description: 'Просто обычный текст',
+			searchTerms: ['p', 'параграф', 'текст'],
+			icon: Text,
+			command: ({ editor, range }: CommandProps) => {
+				editor.chain().focus().deleteRange(range).toggleNode('paragraph', 'paragraph').run();
+			}
+		},
+		{
+			title: 'Строка песни',
+			description: 'Как текст, только лучше',
+			searchTerms: ['p', 'параграф', 'текст', 'песня', 'lyrics'],
+			icon: Feather,
+			command: ({ editor, range }: CommandProps) => {
+				editor.chain().focus().deleteRange(range).toggleNode('paragraph', 'lyricsLine').run();
+			}
+		},
+		{
 			title: 'Заголовок 1',
 			description: 'Большой заголовок',
 			searchTerms: ['h1', 'заголовок', 'большой'],
@@ -97,15 +112,6 @@ const getSuggestionItems = ({ query }: { query: string }) => {
 			icon: Heading3,
 			command: ({ editor, range }: CommandProps) => {
 				editor.chain().focus().deleteRange(range).setNode('heading', { level: 3 }).run();
-			}
-		},
-		{
-			title: 'Текст',
-			description: 'Просто обычный текст',
-			searchTerms: ['p', 'параграф'],
-			icon: Text,
-			command: ({ editor, range }: CommandProps) => {
-				editor.chain().focus().deleteRange(range).toggleNode('paragraph', 'paragraph').run();
 			}
 		},
 		{

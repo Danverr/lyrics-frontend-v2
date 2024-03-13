@@ -10,7 +10,8 @@
 		ListOrdered,
 		TextIcon,
 		Code,
-		CheckSquare
+		CheckSquare,
+		Feather
 	} from 'lucide-svelte';
 	import {
 		PopoverContent,
@@ -23,6 +24,21 @@
 	export let editor: Editor;
 
 	$: items = [
+		{
+			name: 'Текст',
+			icon: TextIcon,
+			command: () => editor.chain().focus().toggleNode('paragraph', 'paragraph').run(),
+			isActive:
+				editor.isActive('paragraph') &&
+				!editor.isActive('bulletList') &&
+				!editor.isActive('orderedList')
+		},
+		{
+			name: 'Строка песни',
+			icon: Feather,
+			command: () => editor.chain().focus().toggleNode('paragraph', 'lyricsLine').run(),
+			isActive: editor.isActive('lyricsLine')
+		},
 		{
 			name: 'Заголовок 1',
 			icon: Heading1,
@@ -40,16 +56,6 @@
 			icon: Heading3,
 			command: () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
 			isActive: editor.isActive('heading', { level: 3 })
-		},
-		{
-			name: 'Текст',
-			icon: TextIcon,
-			command: () => editor.chain().focus().toggleNode('paragraph', 'paragraph').run(),
-			// I feel like there has to be a more efficient way to do this – feel free to PR if you know how!
-			isActive:
-				editor.isActive('paragraph') &&
-				!editor.isActive('bulletList') &&
-				!editor.isActive('orderedList')
 		},
 		{
 			name: 'Марк. список',

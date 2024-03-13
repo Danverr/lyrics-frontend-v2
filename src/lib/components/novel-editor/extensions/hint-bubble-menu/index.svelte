@@ -24,7 +24,7 @@
 		const { from, to } = editor.view.state.selection;
 
 		let text = editor.state.doc.textBetween(from, to).trim();
-		if (text.length > 0 && !text.includes(' ')) {
+		if (text.length > 1 && !text.includes(' ')) {
 			selectedText = text;
 			return true;
 		}

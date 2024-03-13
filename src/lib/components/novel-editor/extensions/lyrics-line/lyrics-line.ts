@@ -1,13 +1,13 @@
 import { Paragraph } from '@tiptap/extension-paragraph';
-import { NodePos } from '@tiptap/core';
+import { NodePos, NodeView } from '@tiptap/core';
 import './styles.pcss';
-
-const VOWELS_SET = new Set(['а', 'у', 'о', 'и', 'э', 'ы']);
+import { VOWELS_SET } from '$lib/components/novel-editor/extensions/lyrics-line/constants';
+import { NodeSelection } from 'prosemirror-state';
 
 const countVowels = (text: string) => {
 	let count = 0;
 	for (const ch of text) {
-		if (VOWELS_SET.has(ch)) {
+		if (VOWELS_SET.has(ch.toLowerCase())) {
 			count += 1;
 		}
 	}
@@ -15,6 +15,8 @@ const countVowels = (text: string) => {
 };
 
 export const LyricsLine = Paragraph.extend({
+	name: 'lyricsLine',
+
 	addAttributes() {
 		return {
 			vowels: 0
@@ -24,47 +26,59 @@ export const LyricsLine = Paragraph.extend({
 	addNodeView() {
 		return ({ editor, node, getPos }) => {
 			const container = document.createElement('p');
-			container.classList.add('lyrics-line');
-			const content = document.createElement('span');
+			container.classList.add('lyricsLine');
 
+			const content = document.createElement('span');
+			content.contentEditable = 'true';
 			content.innerHTML = node.textContent;
 			container.appendChild(content);
 
 			if (typeof getPos === 'function') {
-				const nodePos = new NodePos(editor.state.doc.resolve(getPos()), editor);
+				const counter = document.createElement('div');
+				counter.classList.add('counter');
+				counter.contentEditable = 'false';
+				const vowelsCount = countVowels(node.textContent);
+				counter.innerHTML = vowelsCount > 0 ? vowelsCount.toString() : '';
+				container.appendChild(counter);
 
-				if (nodePos.depth === 0) {
-					const counter = document.createElement('div');
-					counter.classList.add('counter');
-					counter.contentEditable = 'false';
-					counter.innerHTML = node.attrs.vowels > 0 ? node.attrs.vowels : '';
-					container.appendChild(counter);
+				editor.on('update', () => {
+					this.editor.state.doc.descendants((node, pos) => {
+						const count = countVowels(node.textContent);
 
-					editor.on('update', () => {
-						this.editor.state.doc.descendants((node, pos) => {
-							const nodePos = new NodePos(this.editor.state.doc.resolve(pos), this.editor);
-							const count = countVowels(node.textContent);
-
-							if (
-								node.type.name === 'paragraph' &&
-								nodePos.depth === 0 &&
-								node.attrs.vowels !== count
-							) {
-								this.editor.view.dispatch(
-									this.editor.view.state.tr.setNodeMarkup(pos, undefined, {
-										vowels: count
-									})
-								);
-							}
-						});
+						if (node.type.name === 'lyricsLine' && node.attrs.vowels !== count) {
+							this.editor.view.dispatch(
+								this.editor.view.state.tr.setNodeMarkup(pos, undefined, {
+									vowels: count
+								})
+							);
+						}
 					});
-				}
+				});
 			}
 
 			return {
 				dom: container,
 				contentDOM: content
 			};
+		};
+	},
+
+	addKeyboardShortcuts() {
+		return {
+			Enter: () => {
+				const pos = this.editor.state.selection.from;
+				const resPos = this.editor.state.doc.resolve(pos);
+				const parNode = resPos.parent;
+
+				if (parNode.type.name === this.name) {
+					this.editor.commands.insertContentAt(pos, {
+						type: this.name
+					});
+					return true;
+				}
+
+				return false;
+			}
 		};
 	}
 });

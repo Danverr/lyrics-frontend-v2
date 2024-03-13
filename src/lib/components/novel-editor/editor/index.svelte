@@ -37,7 +37,7 @@
 	import { sleep, type Undef, useDelay } from '$lib/utils';
 	import { LyricsLine } from '$lib/components/novel-editor/extensions/lyrics-line/lyrics-line';
 	import { api } from '$lib/api';
-	import { CollaborationCursor } from '@tiptap/extension-collaboration-cursor';
+	import BoldVowelsExtension from '$lib/components/novel-editor/extensions/lyrics-line/bold-vowels';
 
 	/**
 	 * Document name for a collaboration
@@ -229,7 +229,8 @@
 			transformCopiedText: true
 		}),
 		// AutocompletePlugin,
-		LyricsLine
+		LyricsLine,
+		BoldVowelsExtension
 	];
 
 	const { complete, completion, isLoading, stop } = useCompletion({
