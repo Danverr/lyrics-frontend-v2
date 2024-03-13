@@ -1,11 +1,13 @@
 <script context="module" lang="ts">
-	import { ModeWatcher } from 'mode-watcher';
-	import { ThemeToggle } from '../lib/components/theme-toggle';
 	import '../app.pcss';
+	import { AppBar } from '$lib/components/appbar';
+	import { ModeWatcher } from 'mode-watcher';
+	import { Toaster } from '$lib/components/ui/sonner';
 
 	export let ssr = false;
 </script>
 
+<Toaster />
 <ModeWatcher defaultMode={'dark'} />
-<ThemeToggle />
+<AppBar />
 <slot />

@@ -55,16 +55,16 @@
 }
 
 .ProseMirror .is-editor-empty:first-child::before {
+	@apply text-muted-foreground;
 	content: attr(data-placeholder);
 	float: left;
-	color: var(--novel-stone-400);
 	pointer-events: none;
 	height: 0;
 }
 .ProseMirror .is-empty::before {
+	@apply text-muted-foreground;
 	content: attr(data-placeholder);
 	float: left;
-	color: var(--novel-stone-400);
 	pointer-events: none;
 	height: 0;
 }
@@ -190,4 +190,12 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
 
 .ProseMirror blockquote {
   @apply mt-6 border-l-2 pl-6 italic
+}
+
+.ProseMirror strong {
+  @apply font-semibold
+}
+
+.dropcursor {
+	@apply !bg-accent-foreground !rounded-full;
 }

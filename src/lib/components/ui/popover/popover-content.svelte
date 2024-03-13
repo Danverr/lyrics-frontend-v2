@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Popover as PopoverPrimitive } from 'bits-ui';
-	import { cn, flyAndScale } from '$lib/utils/utils';
+	import { cn, flyAndScale } from '$lib/utils';
 
 	type $$Props = PopoverPrimitive.ContentProps;
 
@@ -19,7 +19,7 @@
 	{sideOffset}
 	{...$$restProps}
 	class={cn(
-		'z-50 w-72 rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-none',
+		'z-[9999] w-72 rounded-xl border bg-popover p-4 text-popover-foreground shadow-md outline-none',
 		className
 	)}
 >

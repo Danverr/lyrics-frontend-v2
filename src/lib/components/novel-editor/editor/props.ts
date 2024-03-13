@@ -1,5 +1,5 @@
 import type { EditorProps } from '@tiptap/pm/view';
-import { startImageUpload } from './extensions/image/upload-images.js';
+import { startImageUpload } from '$lib/components/novel-editor/extensions/image/upload-images.js';
 
 export const defaultEditorProps: EditorProps = {
 	attributes: {

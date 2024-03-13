@@ -134,7 +134,6 @@
 	></script>
 </svelte:head>
 
-<Toaster />
 <div class="flex h-screen w-screen flex-col items-center justify-center">
 	<div class="flex w-96 flex-col gap-4">
 		<H3>Авторизация</H3>

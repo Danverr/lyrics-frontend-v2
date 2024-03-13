@@ -64,7 +64,6 @@
 	};
 </script>
 
-<Toaster />
 <div class="flex h-screen w-full flex-col items-center justify-center">
 	<div class="flex w-96 flex-col gap-4">
 		<div class="flex flex-row justify-between">

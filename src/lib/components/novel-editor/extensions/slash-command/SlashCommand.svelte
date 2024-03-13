@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { getPrevText } from '$lib/components/novel-editor/editor.js';
-	import { LoadingCircle } from '$lib/components/novel-editor/ui/icons';
+	import { LoadingCircle } from '../../ui/icons';
 	import { useCompletion } from 'ai/svelte';
 	import type { CommandItemProps } from './slash-command.js';
-	import { anyify } from '$lib/components/novel-editor/utils.js';
+	import { anyify, getPrevText } from '$lib/components/novel-editor/utils.js';
 	import { toast } from 'svelte-sonner';
+	import type { Editor } from '@tiptap/core';
 
 	export let items: CommandItemProps[] = [];
 	export let command: any;

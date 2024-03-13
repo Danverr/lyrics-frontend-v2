@@ -44,11 +44,11 @@
 					'text-blue-500': editor.isActive('link')
 				})}
 			>
-				Link
+				Ссылка
 			</p>
 		</Button>
 	</PopoverTrigger>
-	<PopoverContent class="z-[9999] flex gap-1 overflow-clip rounded-xl p-0">
+	<PopoverContent class="flex gap-1 overflow-clip p-0">
 		<Input
 			autofocus
 			bind:value={inputValue}

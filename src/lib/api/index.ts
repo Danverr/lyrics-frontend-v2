@@ -3,7 +3,7 @@ import { Api } from './api';
 
 const api = new Api({
 	baseURL: BE_BASE_URL,
-	timeout: 5000
+	timeout: 10000
 });
 
 export { api };

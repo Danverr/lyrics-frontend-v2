@@ -9,7 +9,7 @@
 	import RepeatIcon from '~icons/solar/repeat-bold';
 	import MagnetIcon from '~icons/solar/magnet-line-duotone';
 	import DeleteIcon from '~icons/typcn/delete';
-	import UndoIcon from '~icons/solar/undo-left-round-linear';
+	import TrashIcon from '~icons/solar/trash-bin-2-linear';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
@@ -26,7 +26,7 @@
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import HoverPlugin from 'wavesurfer.js/plugins/hover';
 	import type { Region } from 'wavesurfer.js/plugins/regions';
-	import { useDelay } from '$lib/utils/useDelay';
+	import { useDelay } from '$lib/utils';
 
 	const EPS = 0.000001; // For float numbers comparison
 
@@ -47,15 +47,13 @@
 	let wsRegions: RegionsPlugin;
 	let wsLoaded = false;
 	let wsBpm = bpm;
-	let bpmHandler = useDelay(
-		async () => {
-			if (ws && wsBpm !== bpm) {
-				initWavesurfer();
-			}
-		},
-		'',
-		1000
-	);
+	let transitionStart = 0;
+
+	let bpmHandler = useDelay(async () => {
+		if (ws && wsBpm !== bpm) {
+			initWavesurfer();
+		}
+	});
 
 	onMount(() => {
 		initWavesurfer();
@@ -91,7 +89,7 @@
 			autoCenter: false,
 			plugins: [
 				TimelinePlugin.create({
-					formatTimeCallback: (sec: number) => {
+					formatTimeCallback: () => {
 						// let beat = Math.round(sec / msPerBeat);
 						// return beat % 4 == 0 ? beat.toString() : '';
 						return '';
@@ -147,10 +145,12 @@
 
 		wsRegions.on('region-in', (region) => {
 			activeRegion = region;
+			console.log('Transition', new Date().getTime() - transitionStart);
 		});
 		wsRegions.on('region-out', (region) => {
 			if (activeRegion?.id === region.id) {
 				if (loopEnabled && isPlaying) {
+					transitionStart = new Date().getTime();
 					ws.setTime(activeRegion.start);
 				} else {
 					activeRegion = undefined;
@@ -202,11 +202,6 @@
 		activeRegion = region;
 	};
 
-	// $: if (ws) {
-	// 	bpm;
-	// 	initWavesurfer();
-	// }
-
 	$: if (ws && wsRegions) {
 		offset;
 		endOffset;
@@ -237,11 +232,6 @@
 		ws.playPause();
 	};
 
-	const resetBpm = () => {
-		bpm = music.bpm ?? 120;
-		music.custom_bpm = null;
-	};
-
 	const toggleLoop = () => {
 		loopEnabled = !loopEnabled;
 	};
@@ -251,55 +241,65 @@
 	};
 </script>
 
-<div class="flex flex-col gap-4">
-	<div class="relative flex h-9 items-end justify-between">
-		<div class="flex w-32 items-end gap-2">
-			<div>
-				<Label class="text-muted-foreground">BPM</Label>
-				<Input
-					type="number"
-					class="w-full"
-					value={bpm}
-					on:input={(e) => (bpm = Number(e.target.value))}
-				/>
-			</div>
-			<Button variant="outline" size="icon" class="shrink-0" on:click={resetBpm}>
-				<UndoIcon />
-			</Button>
-		</div>
-		<div class="absolute-center flex items-center gap-1">
-			<P class="font-medium">
-				{fileName}
-			</P>
-			<Popover>
-				<PopoverTrigger asChild let:builder>
-					<Button builders={[builder]} size="icon" class="rounded-full" variant="ghost">
-						<DeleteIcon />
-					</Button>
-				</PopoverTrigger>
-				<PopoverContent class="flex w-fit flex-col gap-2 rounded-xl">
-					<P>Удалить трек из проекта?</P>
-					<PopoverClose class="flex w-full content-stretch gap-2">
-						<Button class="flex-1" variant="destructive" on:click={onDelete}>Да</Button>
-						<Button class="flex-1">Нет</Button>
-					</PopoverClose>
-				</PopoverContent>
-			</Popover>
-		</div>
-		<div class="flex gap-2">
-			<Button variant="outline" size="icon" on:click={playPause}>
+<div class="flex flex-col gap-3">
+	<div class="relative flex h-7 items-end justify-between">
+		<div class="flex h-full gap-1.5">
+			<Button class="h-full" variant="outline" size="icon" on:click={playPause}>
 				{#if isPlaying}
 					<PauseIcon />
 				{:else}
 					<PlayIcon />
 				{/if}
 			</Button>
-			<Button variant={loopEnabled ? 'default' : 'outline'} size="icon" on:click={toggleLoop}>
+			<Button
+				class="h-full"
+				variant={loopEnabled ? 'default' : 'outline'}
+				size="icon"
+				on:click={toggleLoop}
+			>
 				<RepeatIcon />
 			</Button>
-			<Button variant={snapEnabled ? 'default' : 'outline'} size="icon" on:click={toggleSnap}>
+			<Button
+				class="h-full"
+				variant={snapEnabled ? 'default' : 'outline'}
+				size="icon"
+				on:click={toggleSnap}
+			>
 				<MagnetIcon />
 			</Button>
+		</div>
+		<div class="absolute-center flex items-center gap-1">
+			<P class="max-w-80 overflow-hidden text-ellipsis whitespace-nowrap font-medium">
+				{fileName}
+			</P>
+			<Popover>
+				<PopoverTrigger asChild let:builder>
+					<Button
+						builders={[builder]}
+						size="icon"
+						class="absolute right-0 translate-x-full rounded-full"
+						variant="ghost"
+					>
+						<DeleteIcon />
+					</Button>
+				</PopoverTrigger>
+				<PopoverContent class="w-fit p-1.5">
+					<PopoverClose>
+						<Button size="icon" variant="destructive" on:click={onDelete}>
+							<TrashIcon />
+						</Button>
+					</PopoverClose>
+				</PopoverContent>
+			</Popover>
+		</div>
+		<div class="flex h-full items-center gap-2">
+			<Label class="text-muted-foreground">BPM</Label>
+			<Input
+				class="m-0 box-border h-full w-12 text-center"
+				type="number"
+				value={bpm}
+				on:input={(e) => (bpm = Number(e.target.value))}
+			/>
 		</div>
 	</div>
 	{#if !wsLoaded}

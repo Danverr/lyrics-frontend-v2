@@ -3,18 +3,18 @@
 
 <script lang="ts">
 	import type { Editor } from '@tiptap/core';
-	import { writable } from 'svelte/store';
-	import LinkSelector from './LinkSelector.svelte';
-	import NodeSelector from './NodeSelector.svelte';
 	import { BubbleMenuPlugin, type BubbleMenuPluginProps } from '@tiptap/extension-bubble-menu';
 	import { onDestroy, onMount } from 'svelte';
-	import FormatSelector from '$lib/components/novel-editor/ui/editor/extensions/bubble-menu/FormatSelector.svelte';
+	import LinkSelector from './LinkSelector.svelte';
+	import NodeSelector from './NodeSelector.svelte';
+	import FormatSelector from './FormatSelector.svelte';
 
 	let element: HTMLElement;
 
 	export let editor: Editor;
 	export let tippyOptions: BubbleMenuPluginProps['tippyOptions'] = {
-		moveTransition: 'transform 0.15s ease-out'
+		moveTransition: 'transform 0.15s ease-out',
+		placement: 'top'
 	};
 	export let pluginKey: BubbleMenuPluginProps['pluginKey'] = 'SvelteTiptapBubbleMenu';
 	export let shouldShow: BubbleMenuPluginProps['shouldShow'] = ({ editor }) => {

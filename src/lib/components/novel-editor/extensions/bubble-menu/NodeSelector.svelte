@@ -24,7 +24,25 @@
 
 	$: items = [
 		{
-			name: 'Text',
+			name: 'Заголовок 1',
+			icon: Heading1,
+			command: () => editor.chain().focus().toggleHeading({ level: 1 }).run(),
+			isActive: editor.isActive('heading', { level: 1 })
+		},
+		{
+			name: 'Заголовок 2',
+			icon: Heading2,
+			command: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
+			isActive: editor.isActive('heading', { level: 2 })
+		},
+		{
+			name: 'Заголовок 3',
+			icon: Heading3,
+			command: () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
+			isActive: editor.isActive('heading', { level: 3 })
+		},
+		{
+			name: 'Текст',
 			icon: TextIcon,
 			command: () => editor.chain().focus().toggleNode('paragraph', 'paragraph').run(),
 			// I feel like there has to be a more efficient way to do this – feel free to PR if you know how!
@@ -34,50 +52,32 @@
 				!editor.isActive('orderedList')
 		},
 		{
-			name: 'Heading 1',
-			icon: Heading1,
-			command: () => editor.chain().focus().toggleHeading({ level: 1 }).run(),
-			isActive: editor.isActive('heading', { level: 1 })
-		},
-		{
-			name: 'Heading 2',
-			icon: Heading2,
-			command: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
-			isActive: editor.isActive('heading', { level: 2 })
-		},
-		{
-			name: 'Heading 3',
-			icon: Heading3,
-			command: () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
-			isActive: editor.isActive('heading', { level: 3 })
-		},
-		{
-			name: 'To-do List',
-			icon: CheckSquare,
-			command: () => editor.chain().focus().toggleTaskList().run(),
-			isActive: editor.isActive('taskItem')
-		},
-		{
-			name: 'Bullet List',
+			name: 'Марк. список',
 			icon: ListOrdered,
 			command: () => editor.chain().focus().toggleBulletList().run(),
 			isActive: editor.isActive('bulletList')
 		},
 		{
-			name: 'Numbered List',
+			name: 'Нум. список',
 			icon: ListOrdered,
 			command: () => editor.chain().focus().toggleOrderedList().run(),
 			isActive: editor.isActive('orderedList')
 		},
 		{
-			name: 'Quote',
+			name: 'Чеклист',
+			icon: CheckSquare,
+			command: () => editor.chain().focus().toggleTaskList().run(),
+			isActive: editor.isActive('taskItem')
+		},
+		{
+			name: 'Цитата',
 			icon: TextQuote,
 			command: () =>
 				editor.chain().focus().toggleNode('paragraph', 'paragraph').toggleBlockquote().run(),
 			isActive: editor.isActive('blockquote')
 		},
 		{
-			name: 'Code',
+			name: 'Код',
 			icon: Code,
 			command: () => editor.chain().focus().toggleCodeBlock().run(),
 			isActive: editor.isActive('codeBlock')
@@ -90,9 +90,8 @@
 </script>
 
 <Popover>
-	<PopoverTrigger asChild let:builder>
+	<PopoverTrigger>
 		<Button
-			builders={[builder]}
 			variant="ghost"
 			class="flex h-full items-center gap-1 whitespace-nowrap rounded-none p-2 pl-3 text-sm font-medium hover:bg-accent active:bg-accent"
 		>
@@ -100,15 +99,13 @@
 			<ChevronDown class="h-4 w-4" />
 		</Button>
 	</PopoverTrigger>
-	<PopoverContent class="z-[9999] flex w-44 flex-col p-1">
+	<PopoverContent class="flex w-44 flex-col p-1">
 		{#each items as item, index (index)}
 			<PopoverClose>
 				<Button
 					variant="ghost"
 					class="h-8 w-full justify-between px-2 py-1"
-					on:click={() => {
-						item.command();
-					}}
+					on:click={item.command}
 				>
 					<div class="flex items-center space-x-2">
 						<div class="rounded-sm border border-muted-foreground p-1">

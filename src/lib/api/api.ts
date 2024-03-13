@@ -797,4 +797,23 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
 				...params
 			})
 	};
+	tiptap = {
+		/**
+		 * @description Получение JWT токена для TipTap. {"iat": <utcnow()>, "iss": "https://lyrics-backend.k8s-1.sslane.ru", "nbf": <utcnow()>, "aud": <tiptap-app-id>}
+		 *
+		 * @tags TipTap
+		 * @name GetTiptapAccessToken
+		 * @summary Get Tiptap Access Token
+		 * @request GET:/tiptap/token
+		 * @secure
+		 */
+		getTiptapAccessToken: (params: RequestParams = {}) =>
+			this.request<Token, any>({
+				path: `/tiptap/token`,
+				method: 'GET',
+				secure: true,
+				format: 'json',
+				...params
+			})
+	};
 }

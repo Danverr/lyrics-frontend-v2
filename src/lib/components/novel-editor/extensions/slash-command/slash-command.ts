@@ -19,7 +19,7 @@ import CommandList from './SlashCommand.svelte';
 // import { toast } from 'sonner';
 // import va from '@vercel/analytics';
 // import { startImageUpload } from '@/ui/editor/plugins/upload-images';
-import { Magic } from '$lib/components/novel-editor/ui/icons';
+import { Magic } from '../../ui/icons';
 import type { SvelteComponent } from 'svelte';
 
 export interface CommandItemProps {
