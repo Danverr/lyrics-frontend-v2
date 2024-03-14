@@ -409,7 +409,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title Lyrics IDE Backend
- * @version 1.0.0
+ * @version 1.0.2
  */
 export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDataType> {
 	auth = {
@@ -499,6 +499,26 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
 			this.request<ProjectOut, HTTPValidationError>({
 				path: `/projects/`,
 				method: 'POST',
+				body: data,
+				secure: true,
+				type: ContentType.Json,
+				format: 'json',
+				...params
+			}),
+
+		/**
+		 * @description Изменить проект
+		 *
+		 * @tags Проекты
+		 * @name UpdateProject
+		 * @summary Изменить проект
+		 * @request PATCH:/projects/{project_id}
+		 * @secure
+		 */
+		updateProject: (projectId: string, data: ProjectBase, params: RequestParams = {}) =>
+			this.request<ProjectOut, void | HTTPValidationError>({
+				path: `/projects/${projectId}`,
+				method: 'PATCH',
 				body: data,
 				secure: true,
 				type: ContentType.Json,

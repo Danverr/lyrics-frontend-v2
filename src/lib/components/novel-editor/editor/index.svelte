@@ -38,6 +38,7 @@
 	import { LyricsLine } from '$lib/components/novel-editor/extensions/lyrics-line/lyrics-line';
 	import { api } from '$lib/api';
 	import BoldVowelsExtension from '$lib/components/novel-editor/extensions/lyrics-line/bold-vowels';
+	import { Skeleton } from '$lib/components/ui/skeleton';
 
 	/**
 	 * Document name for a collaboration
@@ -99,7 +100,8 @@
 	 *
 	 * <Editor bind:editor />
 	 */
-	export let editor: Undef<Editor>;
+	export let editor: Undef<Editor> = undefined;
+
 	let provider: Undef<TiptapCollabProvider>;
 
 	const doc = new Y.Doc();

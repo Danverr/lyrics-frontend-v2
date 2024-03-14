@@ -61,7 +61,7 @@
     --accent: 240 3.7% 15.9%;
     --accent-foreground: 0 0% 98%;
  
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 62.8% 50.6%;
     --destructive-foreground: 0 0% 98%;
  
     --ring: 240 4.9% 83.9%;
@@ -150,4 +150,15 @@ input[type=number] {
       animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
     }
   }
+}
+
+.muted-opacity {
+  @apply opacity-50 transition-all;
+}
+.muted-opacity:hover {
+  @apply opacity-100;
+}
+
+.text-overflow-ellipsis {
+  @apply text-ellipsis whitespace-nowrap overflow-hidden;
 }

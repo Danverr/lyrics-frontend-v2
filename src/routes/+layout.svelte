@@ -1,6 +1,6 @@
 <script context="module" lang="ts">
 	import '../app.pcss';
-	import { AppBar } from '$lib/components/appbar';
+	import { AppOverlay } from '$lib/components/app-overlay';
 	import { ModeWatcher } from 'mode-watcher';
 	import { Toaster } from '$lib/components/ui/sonner';
 
@@ -9,5 +9,5 @@
 
 <Toaster />
 <ModeWatcher defaultMode={'dark'} />
-<AppBar />
+<AppOverlay />
 <slot />

@@ -66,9 +66,8 @@ export const flyAndScale = (
 
 const lastCalledMap = new Map();
 
-export const useDelay = <T extends (...args: any[]) => Promise<any>>(
+export const useDelay = <T extends (...args: any[]) => any>(
 	callback: T,
-	errorHandler: (e: unknown) => void = () => {},
 	timeout: number = 2000
 ) => {
 	const id = uuidv4();
@@ -80,7 +79,7 @@ export const useDelay = <T extends (...args: any[]) => Promise<any>>(
 				new Date().getTime() - lastCalledMap.get(id).getTime() >= timeout
 			) {
 				lastCalledMap.delete(id);
-				callback(...args).catch(errorHandler);
+				callback(...args);
 			}
 		}, timeout);
 	};
