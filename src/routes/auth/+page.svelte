@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { FE_AUTH_PAGE, FE_BASE_URL } from '$lib/api/constants.js';
+	import { FE_PROJECTS_PAGE, FE_AUTH_PAGE, FE_YANDEX_ID_PAGE } from '$lib/api/constants.js';
 	import SendArrow from '~icons/fluent/send-20-filled';
 	import { Button } from '$lib/components/ui/button';
 	import {
@@ -17,7 +17,6 @@
 	import { Input } from '$lib/components/ui/input';
 	import { H3 } from '$lib/components/ui/typography';
 	import { toast } from 'svelte-sonner';
-	import { Toaster } from '$lib/components/ui/sonner';
 	import { mode } from 'mode-watcher';
 	import { createLocalStorageStore, CURRENT_TOKEN_KEY } from '$lib/stores/localStorage';
 
@@ -42,7 +41,7 @@
 
 	onMount(async () => {
 		if ($authToken !== '') {
-			window.location.href = FE_BASE_URL + '/projects';
+			window.location.href = FE_PROJECTS_PAGE;
 			return;
 		}
 
@@ -53,7 +52,7 @@
 					{
 						client_id: '404ab7886ee84710b17d84490de832c2',
 						response_type: 'token',
-						redirect_uri: FE_AUTH_PAGE + '/yandex_id'
+						redirect_uri: FE_YANDEX_ID_PAGE
 					},
 					FE_AUTH_PAGE,
 					{
@@ -71,7 +70,7 @@
 				try {
 					let res = await api.auth.authWithYandexToken(data);
 					authToken.set(res.access_token);
-					window.location.href = FE_BASE_URL + '/projects';
+					window.location.href = FE_PROJECTS_PAGE;
 				} catch (e) {
 					toast.error('Ошибка при авторизации');
 				}
@@ -115,7 +114,7 @@
 				password: $formData.code.toString()
 			});
 			authToken.set(res.access_token);
-			window.location.href = FE_BASE_URL + '/projects';
+			window.location.href = FE_PROJECTS_PAGE;
 		} catch (e: unknown) {
 			if (typeof e === 'string') {
 				$errors.code = [e as string];

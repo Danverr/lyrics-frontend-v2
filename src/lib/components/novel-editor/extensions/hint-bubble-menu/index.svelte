@@ -18,7 +18,7 @@
 	export let pluginKey: BubbleMenuPluginProps['pluginKey'] = 'SvelteTiptapHintBubbleMenu';
 
 	export let shouldShow: BubbleMenuPluginProps['shouldShow'] = ({ editor }) => {
-		if (!editor.isActive('paragraph')) {
+		if (!editor.isActive('lyricsLine')) {
 			return false;
 		}
 		const { from, to } = editor.view.state.selection;
