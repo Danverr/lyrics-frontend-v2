@@ -1,4 +1,4 @@
-import { PUBLIC_FE_BASE_URL, PUBLIC_BE_BASE_URL } from '$env/static/public';
+import { PUBLIC_FE_BASE_URL, PUBLIC_BE_BASE_URL } from '$env/dynamic/public';
 
 export const FE_BASE_URL = PUBLIC_FE_BASE_URL;
 export const FE_AUTH_PAGE = FE_BASE_URL + '/auth';
