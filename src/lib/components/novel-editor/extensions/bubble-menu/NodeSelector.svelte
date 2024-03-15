@@ -91,7 +91,7 @@
 	];
 
 	$: activeItem = items.filter((item) => item.isActive).pop() ?? {
-		name: 'Multiple'
+		name: 'Разные'
 	};
 </script>
 

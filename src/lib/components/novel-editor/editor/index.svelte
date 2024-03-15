@@ -103,8 +103,8 @@
 	export let editor: Undef<Editor> = undefined;
 
 	let provider: Undef<TiptapCollabProvider>;
-
 	const doc = new Y.Doc();
+	let ready = false;
 	let element: Element;
 
 	const defaultExtensions = [
@@ -292,7 +292,13 @@
 					document: doc
 				});
 
+				provider.on('synced', () => {
+					ready = true;
+					editor?.setEditable(true);
+				});
+
 				editor = new Editor({
+					editable: false,
 					element: element,
 					onTransaction: () => {
 						// force re-render so `editor.isActive` works as expected
@@ -360,6 +366,9 @@
 	<EditorHintBubbleMenu {editor} />
 {/if}
 
+{#if !ready}
+	<Skeleton class="mt-2 h-36 w-full rounded-xl" />
+{/if}
 <div id="editor" class={className} bind:this={element}>
 	<slot />
 	{#if editor?.isActive('image')}
