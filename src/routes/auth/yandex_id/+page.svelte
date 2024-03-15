@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { FE_AUTH_PAGE } from '$lib/api/constants';
 
 	onMount(() => {
-		window.YaSendSuggestToken('http://localhost:5173/auth');
+		window.YaSendSuggestToken(FE_AUTH_PAGE);
 	});
 </script>
 
