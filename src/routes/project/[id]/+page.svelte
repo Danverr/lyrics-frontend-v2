@@ -10,7 +10,6 @@
 	import { api } from '$lib/api';
 	import { toast } from 'svelte-sonner';
 	import { Editor } from '$lib/components/novel-editor/index.js';
-	import { Input } from '$lib/components/ui/input';
 	import { Player } from '$lib/components/audio-player';
 	import Dropzone from 'svelte-file-dropzone';
 	import { P } from '$lib/components/ui/typography';
@@ -18,6 +17,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import Portal from 'svelte-portal';
 	import { FE_PROJECTS_PAGE } from '$lib/api/constants';
+	import { Textarea } from '$lib/components/ui/textarea';
 
 	const projectId = $page.params['id'] ?? '';
 	let project: ProjectOut;
@@ -27,19 +27,21 @@
 	let handleTextNameUpdate = useDelay(async () => {
 		try {
 			await api.texts.updateText(activeText.text_id, { name: activeText.name });
+			toast.success('Новое название текста сохранено');
 			activeText = activeText;
 		} catch (e) {
 			toast.error('Не удалось обновить название варианта');
 		}
-	});
+	}, 1000);
 
 	const handleProjectNameUpdate = useDelay(async () => {
 		try {
 			await api.projects.updateProject(projectId, { name: project.name });
+			toast.success('Новое название проекта сохранено');
 		} catch (e) {
-			toast.error('Не удалось обновить Название проекта');
+			toast.error('Не удалось обновить название проекта');
 		}
-	});
+	}, 1000);
 
 	const handleBpmUpdate = useDelay(async (bpm: number) => {
 		try {
@@ -69,7 +71,10 @@
 
 	const deleteMusic = async () => {
 		try {
-			project = await api.music.deleteMusic(projectId);
+			// TODO: Пофиксить ручку, не приходят тексты
+			await api.music.deleteMusic(projectId);
+			project.music = null;
+			project = project;
 		} catch (e) {
 			toast.error('Не удалось удалить трек');
 		}
@@ -143,9 +148,11 @@
 {#if project !== undefined}
 	<Portal target="#leftSidebar">
 		<div class="flex flex-col">
-			<Input
-				type="text"
+			<Textarea
+				wrap="soft"
+				autoresize={true}
 				on:keydown={handleProjectNameUpdate}
+				on:input={(e) => console.log(e)}
 				class="no-border mb-2 h-9 w-full rounded-none p-0 pl-6 text-xl font-bold tracking-tight"
 				bind:value={project.name}
 			/>
@@ -154,7 +161,7 @@
 					<div class="flex w-full">
 						<Button
 							variant="link"
-							class="flex justify-start px-0 font-normal"
+							class="overflow-hidden px-0 font-normal"
 							on:click={() => selectText(text)}
 						>
 							<div class="mr-2 h-4 w-4 flex-shrink-0">
@@ -162,12 +169,12 @@
 									<CheckIcon class="h-4 w-4" />
 								{/if}
 							</div>
-							<P class="text-overflow-ellipsis w-36 text-left">
+							<P class="text-overflow-ellipsis flex-1">
 								{!text.name ? textNamePlaceholder : text.name}
 							</P>
 						</Button>
 						<Button
-							class="ml-auto rounded-full"
+							class="ml-auto shrink-0 rounded-full"
 							variant="ghost"
 							size="icon"
 							on:click={() => deleteText(text.text_id)}
@@ -205,8 +212,9 @@
 					</Dropzone>
 				{/if}
 			</div>
-			<Input
-				type="text"
+			<Textarea
+				wrap="soft"
+				autoresize={true}
 				on:keydown={handleTextNameUpdate}
 				class="no-border h-auto w-full rounded-none p-0 text-[40px] font-bold tracking-tight"
 				placeholder={textNamePlaceholder}

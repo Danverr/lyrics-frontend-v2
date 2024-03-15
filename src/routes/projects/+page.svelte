@@ -71,7 +71,7 @@
 				<PlusIcon />
 			</Button>
 		</div>
-		<div class="flex flex-col gap-1">
+		<div class="-mr-2 flex max-h-96 flex-col gap-1 overflow-auto pr-2">
 			{#if !dataLoaded}
 				<Skeleton class="h-9 w-full" />
 				<Skeleton class="h-9 w-full" />
@@ -81,7 +81,7 @@
 				<div class="flex justify-between">
 					<Button
 						variant="link"
-						class="flex w-full justify-start px-0"
+						class="flex  w-full justify-start px-0"
 						on:click={() => (window.location.href = `/project/${project.project_id}`)}
 					>
 						<div class="flex items-center">

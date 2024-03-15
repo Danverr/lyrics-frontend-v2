@@ -269,7 +269,7 @@
 			</Button>
 		</div>
 		<div class="absolute-center flex items-center gap-1">
-			<P class="max-w-80 overflow-hidden text-ellipsis whitespace-nowrap font-medium">
+			<P class="text-overflow-ellipsis max-w-80 font-medium">
 				{fileName}
 			</P>
 			<Popover>
