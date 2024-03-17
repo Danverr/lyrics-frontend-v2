@@ -1,8 +1,6 @@
 import { Paragraph } from '@tiptap/extension-paragraph';
-import { NodePos, NodeView } from '@tiptap/core';
 import './styles.pcss';
 import { VOWELS_SET } from '$lib/components/novel-editor/extensions/lyrics-line/constants';
-import { NodeSelection } from 'prosemirror-state';
 
 const countVowels = (text: string) => {
 	let count = 0;
@@ -66,9 +64,14 @@ export const LyricsLine = Paragraph.extend({
 	addKeyboardShortcuts() {
 		return {
 			Enter: () => {
-				const pos = this.editor.state.selection.from;
+				const selection = this.editor.state.selection;
+				const pos = selection.from;
 				const resPos = this.editor.state.doc.resolve(pos);
 				const parNode = resPos.parent;
+
+				if (!selection.empty) {
+					return false;
+				}
 
 				if (parNode.type.name === this.name) {
 					this.editor.commands.insertContentAt(pos, {

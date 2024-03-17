@@ -193,7 +193,7 @@
 			</Button>
 		</div>
 	</Portal>
-	<div class="flex w-full flex-col items-center py-16">
+	<div class="flex w-full flex-col items-center pb-[500px] pt-16">
 		<div class="flex w-[44rem] flex-col">
 			<div class="mb-8">
 				{#if project?.music}

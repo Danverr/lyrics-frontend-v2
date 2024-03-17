@@ -35,9 +35,7 @@ export const flyAndScale = (
 		const [minB, maxB] = scaleB;
 
 		const percentage = (valueA - minA) / (maxA - minA);
-		const valueB = percentage * (maxB - minB) + minB;
-
-		return valueB;
+		return percentage * (maxB - minB) + minB;
 	};
 
 	const styleToString = (style: Record<string, number | string | undefined>): string => {
@@ -83,4 +81,8 @@ export const useDelay = <T extends (...args: any[]) => any>(
 			}
 		}, timeout);
 	};
+};
+
+export const firstLetterUpperCase = (text: string) => {
+	return text.charAt(0).toUpperCase() + text.slice(1);
 };
