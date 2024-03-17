@@ -2,7 +2,6 @@ import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { cubicOut } from 'svelte/easing';
 import type { TransitionConfig } from 'svelte/transition';
-import { v4 as uuidv4 } from 'uuid';
 
 // FOR SHITCODE ONLY
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -64,25 +63,17 @@ export const flyAndScale = (
 
 const lastCalledMap = new Map();
 
-export const useDelay = <T extends (...args: any[]) => any>(
-	callback: T,
-	timeout: number = 2000
-) => {
-	const id = uuidv4();
-	return (...args: Parameters<T>) => {
-		lastCalledMap.set(id, new Date());
-		setTimeout(async () => {
-			if (
-				lastCalledMap.get(id) !== undefined &&
-				new Date().getTime() - lastCalledMap.get(id).getTime() >= timeout
-			) {
-				lastCalledMap.delete(id);
-				callback(...args);
-			}
-		}, timeout);
-	};
-};
-
 export const firstLetterUpperCase = (text: string) => {
 	return text.charAt(0).toUpperCase() + text.slice(1);
 };
+
+export function createDebouncedCallback<T extends (...args: any[]) => any>(
+	callback: T,
+	delay: number = 2000
+) {
+	let timeout: ReturnType<typeof setTimeout> | null = null;
+	return (...args: Parameters<T>) => {
+		if (timeout) clearTimeout(timeout);
+		timeout = setTimeout(() => callback(...args), delay);
+	};
+}

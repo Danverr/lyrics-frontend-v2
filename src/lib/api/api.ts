@@ -48,6 +48,37 @@ export interface BodyUploadMusic {
 	music: File;
 }
 
+/**
+ * CompletionIn
+ * Схема куска текста для автодополнения
+ */
+export interface CompletionIn {
+	/** Text */
+	text: string;
+}
+
+/**
+ * CompletionOut
+ * Схема для варианта результата автодополнения текста
+ */
+export interface CompletionOut {
+	/**
+	 * Completion
+	 * Продолжение текста
+	 */
+	completion: string;
+}
+
+/**
+ * GrantLevel
+ * Уровень доступа к проекту
+ */
+export enum GrantLevel {
+	OWNER = 'OWNER',
+	READ_WRITE = 'READ_WRITE',
+	READ_ONLY = 'READ_ONLY'
+}
+
 /** HTTPValidationError */
 export interface HTTPValidationError {
 	/** Detail */
@@ -99,6 +130,87 @@ export interface ProjectBase {
 }
 
 /**
+ * ProjectGrant
+ * Схема для гранта доступа к проекту
+ */
+export interface ProjectGrant {
+	/**
+	 * Project Id
+	 * Идентификатор проекта
+	 * @format uuid4
+	 */
+	project_id: string;
+	/**
+	 * User Id
+	 * Идентификатор пользователя
+	 * @format uuid4
+	 */
+	user_id: string;
+	/** Уровень доступа к проекту */
+	level: GrantLevel;
+	/**
+	 * Created At
+	 * Дата создания гранта
+	 * @format date-time
+	 */
+	created_at: string;
+}
+
+/**
+ * ProjectGrantCode
+ * Схема для кода доступа к проекту
+ */
+export interface ProjectGrantCode {
+	/**
+	 * Grant Code Id
+	 * Код доступа к проекту
+	 * @format uuid4
+	 */
+	grant_code_id: string;
+	/**
+	 * Project Id
+	 * Идентификатор проекта
+	 * @format uuid4
+	 */
+	project_id: string;
+	/**
+	 * Issuer User Id
+	 * Идентификатор пользователя, создавшего код доступа
+	 * @format uuid4
+	 */
+	issuer_user_id: string;
+	/** Уровень доступа к проекту */
+	level: GrantLevel;
+	/**
+	 * Max Activations
+	 * Максимальное количество активаций кода
+	 */
+	max_activations: number;
+	/**
+	 * Current Activations
+	 * Количество активаций кода
+	 */
+	current_activations: number;
+	/**
+	 * Is Active
+	 * Активен ли код доступа к проекту
+	 */
+	is_active: boolean;
+	/**
+	 * Created At
+	 * Дата создания кода
+	 * @format date-time
+	 */
+	created_at: string;
+	/**
+	 * Updated At
+	 * Дата последнего обновления кода
+	 * @format date-time
+	 */
+	updated_at: string;
+}
+
+/**
  * ProjectOut
  * Полная схема для проекта для отображения
  */
@@ -119,6 +231,18 @@ export interface ProjectOut {
 	 * @format uuid4
 	 */
 	project_id: string;
+	/**
+	 * Created At
+	 * Дата создания проекта
+	 * @format date-time
+	 */
+	created_at: string;
+	/**
+	 * Updated At
+	 * Дата последнего обновления проекта
+	 * @format date-time
+	 */
+	updated_at: string;
 	/**
 	 * Texts
 	 * Варианты текста
@@ -146,6 +270,18 @@ export interface TextVariant {
 	 */
 	text_id: string;
 	/**
+	 * Created At
+	 * Дата создания проекта
+	 * @format date-time
+	 */
+	created_at: string;
+	/**
+	 * Updated At
+	 * Дата последнего обновления проекта
+	 * @format date-time
+	 */
+	updated_at: string;
+	/**
 	 * Payload
 	 * JSON с текстом
 	 */
@@ -168,6 +304,18 @@ export interface TextVariantCompact {
 	 * @format uuid4
 	 */
 	text_id: string;
+	/**
+	 * Created At
+	 * Дата создания проекта
+	 * @format date-time
+	 */
+	created_at: string;
+	/**
+	 * Updated At
+	 * Дата последнего обновления проекта
+	 * @format date-time
+	 */
+	updated_at: string;
 }
 
 /**
@@ -409,7 +557,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title Lyrics IDE Backend
- * @version 1.0.2
+ * @version 1.8.0
  */
 export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDataType> {
 	auth = {
@@ -469,7 +617,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
 	};
 	projects = {
 		/**
-		 * @description Получить список проектов
+		 * @description Получить список проектов, на которые у пользователя есть доступ
 		 *
 		 * @tags Проекты
 		 * @name GetProjects
@@ -718,7 +866,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
 		 * @secure
 		 */
 		deleteText: (textId: string, params: RequestParams = {}) =>
-			this.request<any, HTTPValidationError>({
+			this.request<any, void | HTTPValidationError>({
 				path: `/texts/${textId}`,
 				method: 'DELETE',
 				secure: true,
@@ -832,6 +980,114 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
 				path: `/tiptap/token`,
 				method: 'GET',
 				secure: true,
+				format: 'json',
+				...params
+			})
+	};
+	completions = {
+		/**
+		 * @description Продолжить текст
+		 *
+		 * @tags Автодополнение
+		 * @name CreateCompletion
+		 * @summary Продолжить текст
+		 * @request POST:/completions/
+		 * @secure
+		 */
+		createCompletion: (data: CompletionIn, params: RequestParams = {}) =>
+			this.request<CompletionOut[], HTTPValidationError>({
+				path: `/completions/`,
+				method: 'POST',
+				body: data,
+				secure: true,
+				type: ContentType.Json,
+				format: 'json',
+				...params
+			})
+	};
+	grant = {
+		/**
+		 * @description Получить ссылку на получение доступа к проекту
+		 *
+		 * @tags Доступ
+		 * @name GenerateProjectShareCode
+		 * @summary Получить код на получение доступа к проекту
+		 * @request GET:/grant/{project_id}
+		 * @secure
+		 */
+		generateProjectShareCode: (
+			projectId: string,
+			query: {
+				/**
+				 * Grant Level
+				 * уровень доступа
+				 */
+				grant_level: GrantLevel;
+				/**
+				 * Max Activations
+				 * максимальное количество активаций
+				 * @exclusiveMin 0
+				 */
+				max_activations: number;
+			},
+			params: RequestParams = {}
+		) =>
+			this.request<ProjectGrantCode, void | HTTPValidationError>({
+				path: `/grant/${projectId}`,
+				method: 'GET',
+				query: query,
+				secure: true,
+				format: 'json',
+				...params
+			}),
+
+		/**
+		 * @description Активировать код доступа к проекту. Проверяет наличие и активность кода, активирует в случае успеха проерок.
+		 *
+		 * @tags Доступ
+		 * @name ActivateProjectShareCode
+		 * @summary Активировать код доступа к проекту
+		 * @request GET:/grant/activate/{grant_code_id}
+		 * @secure
+		 */
+		activateProjectShareCode: (grantCodeId: string, params: RequestParams = {}) =>
+			this.request<ProjectGrant, void | HTTPValidationError>({
+				path: `/grant/activate/${grantCodeId}`,
+				method: 'GET',
+				secure: true,
+				format: 'json',
+				...params
+			})
+	};
+	health = {
+		/**
+		 * @description Проверка живости сервиса
+		 *
+		 * @tags health
+		 * @name GetLiveness
+		 * @summary Liveness
+		 * @request GET:/health/liveness
+		 */
+		getLiveness: (params: RequestParams = {}) =>
+			this.request<any, any>({
+				path: `/health/liveness`,
+				method: 'GET',
+				format: 'json',
+				...params
+			}),
+
+		/**
+		 * @description Проверка готовности сервиса принимать запросы
+		 *
+		 * @tags health
+		 * @name GetReadiness
+		 * @summary Readiness
+		 * @request GET:/health/readiness
+		 */
+		getReadiness: (params: RequestParams = {}) =>
+			this.request<any, any>({
+				path: `/health/readiness`,
+				method: 'GET',
 				format: 'json',
 				...params
 			})

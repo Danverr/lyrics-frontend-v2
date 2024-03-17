@@ -1,7 +1,11 @@
 import { type Editor, Extension } from '@tiptap/core';
-import { Plugin, TextSelection } from 'prosemirror-state';
+import { Plugin, TextSelection, Selection } from 'prosemirror-state';
 import { Decoration, DecorationSet } from 'prosemirror-view';
 import './styles.pcss';
+import { v4 as uuidv4 } from 'uuid';
+import { createDebouncedCallback } from '$lib/utils';
+import { api } from '$lib/api';
+import { getPrevText } from '$lib/components/novel-editor/utils';
 
 let triggerAutocomplete = true;
 
@@ -16,6 +20,46 @@ const loaderDots = `
 type AutocompleteStorage = {
 	suggestion: string;
 	loading: boolean;
+};
+
+let currentQueryId: string = '';
+
+const debounceAutocomplete = createDebouncedCallback(async (editor: Editor) => {
+	const id = uuidv4();
+	currentQueryId = id;
+
+	setAutocomplete(editor, {
+		suggestion: '',
+		loading: true
+	});
+
+	let completion = '';
+
+	try {
+		const completions = await api.completions.createCompletion({
+			text: getPrevText(editor, 1000)
+		});
+		if (completions.length) {
+			completion = completions[0].completion;
+			completion = completion.replace(/\n\s*\n/g, '\n');
+		}
+	} catch (e) {}
+
+	if (currentQueryId === id) {
+		setAutocomplete(editor, {
+			suggestion: completion,
+			loading: false
+		});
+	}
+});
+
+const handleEditorUpdate = (editor: Editor) => {
+	currentQueryId = '';
+	setAutocomplete(editor, {
+		suggestion: '',
+		loading: false
+	});
+	debounceAutocomplete(editor);
 };
 
 export const setAutocomplete = (
@@ -64,7 +108,7 @@ export const AutocompletePlugin = Extension.create({
 				this.editor
 					.chain()
 					.focus()
-					.command(({ tr }) => {
+					.command(({ tr, editor }) => {
 						const cursorPos = tr.selection.$head.pos;
 						const currentNode = tr.selection.$head.node();
 						const nextNode = tr.doc.nodeAt(cursorPos);
@@ -74,16 +118,34 @@ export const AutocompletePlugin = Extension.create({
 							currentNode.content.size > 0 &&
 							(!nextNode || nextNode.isBlock)
 						) {
-							tr.insertText(this.editor.storage.autocompletePlugin.suggestion);
-							setAutocomplete(this.editor, {
-								suggestion: '',
-								loading: false
-							});
+							const lines = this.editor.storage.autocompletePlugin.suggestion.split('\n');
+							let pos = cursorPos;
+
+							for (let i = 0; i < lines.length; i += 1) {
+								const line = lines[i];
+								if (i == 0) {
+									tr.insertText(line);
+									pos += line.length;
+								} else {
+									const node = editor.schema.node('lyricsLine', null, editor.schema.text(line));
+									tr.insert(pos, node);
+									pos += node.nodeSize;
+								}
+							}
+
+							tr.setSelection(new TextSelection(tr.doc.resolve(pos)));
 						}
 						return true;
 					})
 					.run()
 		};
+	},
+
+	onUpdate() {
+		handleEditorUpdate(this.editor);
+	},
+	onSelectionUpdate() {
+		handleEditorUpdate(this.editor);
 	},
 
 	addProseMirrorPlugins() {
@@ -105,6 +167,8 @@ export const AutocompletePlugin = Extension.create({
 						let textContent = params.suggestion ?? '';
 						if (params.loading) {
 							textContent = loaderDots;
+						} else {
+							textContent = textContent.replaceAll('\n', '<br/>');
 						}
 
 						if (textContent === '') {
@@ -132,6 +196,7 @@ export const AutocompletePlugin = Extension.create({
 
 							decorationSet = decorationSet.add(transaction.doc, [suggestionDecoration]);
 						}
+
 						return decorationSet;
 					}
 				},

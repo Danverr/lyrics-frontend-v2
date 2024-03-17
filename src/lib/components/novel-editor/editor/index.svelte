@@ -1,11 +1,9 @@
 <script lang="ts">
 	import './styles.pcss';
-	import { getPrevText } from '$lib/components/novel-editor/utils';
 	import * as Y from 'yjs';
-	import { createDebouncedCallback, noop } from '$lib/components/novel-editor/utils.js';
+	import { noop } from '$lib/components/novel-editor/utils.js';
 	import { Editor, Extension, InputRule } from '@tiptap/core';
 	import type { EditorProps } from '@tiptap/pm/view';
-	import { useCompletion } from 'ai/svelte';
 	import ImageResizer from '$lib/components/novel-editor/extensions/image/ImageResizer.svelte';
 	import { onMount } from 'svelte';
 	import { defaultEditorProps } from './props.js';
@@ -34,7 +32,7 @@
 	import TaskList from '@tiptap/extension-task-list';
 	import TaskItem from '@tiptap/extension-task-item';
 	import { Markdown } from 'tiptap-markdown';
-	import { sleep, type Undef, useDelay } from '$lib/utils';
+	import { createDebouncedCallback, type Undef } from '$lib/utils';
 	import { LyricsLine } from '$lib/components/novel-editor/extensions/lyrics-line/lyrics-line';
 	import { api } from '$lib/api';
 	import BoldVowelsExtension from '$lib/components/novel-editor/extensions/lyrics-line/bold-vowels';
@@ -230,51 +228,10 @@
 			html: false,
 			transformCopiedText: true
 		}),
-		// AutocompletePlugin,
+		AutocompletePlugin,
 		LyricsLine,
 		BoldVowelsExtension
 	];
-
-	const { complete, completion, isLoading, stop } = useCompletion({
-		id: 'novel',
-		api: completionApi,
-		onFinish: (_prompt, completion) => {
-			editor?.commands.setTextSelection({
-				from: editor.state.selection.from - completion.length,
-				to: editor.state.selection.from
-			});
-		},
-		onError: (err: Error) => {
-			toast.error(err.message);
-			// if (err.message === 'You have reached your request limit for the day.') {
-			// 	va.track('Rate Limit Reached');
-			// }
-		}
-	});
-
-	let prev = '';
-	function insertAiCompletion() {
-		const diff = $completion.slice(prev.length);
-
-		prev = $completion;
-		editor?.commands.insertContent(diff);
-	}
-
-	$: {
-		[$completion];
-		insertAiCompletion();
-	}
-
-	const updateAutocomplete = useDelay(async () => {
-		setAutocomplete(editor, {
-			loading: true
-		});
-		await sleep(3000);
-		setAutocomplete(editor, {
-			suggestion: '42',
-			loading: false
-		});
-	});
 
 	const debouncedUpdates = createDebouncedCallback(async ({ editor }) => {
 		onDebouncedUpdate(editor);
@@ -311,42 +268,8 @@
 						...editorProps
 					},
 					onUpdate: (e) => {
-						// const selection = e.editor.state.selection;
-						// const lastTwo = getPrevText(e.editor, {
-						// 	chars: 2
-						// });
-						//
-						// if (lastTwo === '++' && !$isLoading) {
-						// 	e.editor.commands.deleteRange({
-						// 		from: selection.from - 2,
-						// 		to: selection.from
-						// 	});
-						// 	complete(
-						// 		getPrevText(e.editor, {
-						// 			chars: 5000
-						// 		})
-						// 	);
-						// 	// complete(e.editor.storage.markdown.getMarkdown());
-						// } else {
-						// 	onUpdate(e.editor);
-						// 	debouncedUpdates(e);
-						// }
-
-						// setAutocomplete(editor, {
-						// 	suggestion: '',
-						// 	loading: false
-						// });
-						// updateAutocomplete();
-
 						onUpdate(e.editor);
 						debouncedUpdates(e);
-					},
-					onSelectionUpdate: () => {
-						// setAutocomplete(editor, {
-						// 	suggestion: '',
-						// 	loading: false
-						// });
-						// updateAutocomplete();
 					}
 				});
 			} catch (e) {

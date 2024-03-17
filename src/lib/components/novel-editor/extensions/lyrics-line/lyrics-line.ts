@@ -21,6 +21,20 @@ export const LyricsLine = Paragraph.extend({
 		};
 	},
 
+	onUpdate() {
+		this.editor.state.doc.descendants((node, pos) => {
+			const count = countVowels(node.textContent);
+
+			if (node.type.name === 'lyricsLine' && node.attrs.vowels !== count) {
+				this.editor.view.dispatch(
+					this.editor.view.state.tr.setNodeMarkup(pos, undefined, {
+						vowels: count
+					})
+				);
+			}
+		});
+	},
+
 	addNodeView() {
 		return ({ editor, node, getPos }) => {
 			const container = document.createElement('p');
@@ -38,20 +52,6 @@ export const LyricsLine = Paragraph.extend({
 				const vowelsCount = countVowels(node.textContent);
 				counter.innerHTML = vowelsCount > 0 ? vowelsCount.toString() : '';
 				container.appendChild(counter);
-
-				editor.on('update', () => {
-					this.editor.state.doc.descendants((node, pos) => {
-						const count = countVowels(node.textContent);
-
-						if (node.type.name === 'lyricsLine' && node.attrs.vowels !== count) {
-							this.editor.view.dispatch(
-								this.editor.view.state.tr.setNodeMarkup(pos, undefined, {
-									vowels: count
-								})
-							);
-						}
-					});
-				});
 			}
 
 			return {

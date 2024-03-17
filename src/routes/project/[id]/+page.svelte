@@ -13,7 +13,7 @@
 	import { Player } from '$lib/components/audio-player';
 	import Dropzone from 'svelte-file-dropzone';
 	import { P } from '$lib/components/ui/typography';
-	import { useDelay } from '$lib/utils';
+	import { createDebouncedCallback } from '$lib/utils';
 	import { Button } from '$lib/components/ui/button';
 	import Portal from 'svelte-portal';
 	import { FE_PROJECTS_PAGE } from '$lib/api/constants';
@@ -24,7 +24,7 @@
 	let activeText: TextVariantCompact;
 	const textNamePlaceholder = 'Без названия';
 
-	let handleTextNameUpdate = useDelay(async () => {
+	let handleTextNameUpdate = createDebouncedCallback(async () => {
 		try {
 			await api.texts.updateText(activeText.text_id, { name: activeText.name });
 			toast.success('Новое название текста сохранено');
@@ -34,7 +34,7 @@
 		}
 	}, 1000);
 
-	const handleProjectNameUpdate = useDelay(async () => {
+	const handleProjectNameUpdate = createDebouncedCallback(async () => {
 		try {
 			await api.projects.updateProject(projectId, { name: project.name });
 			toast.success('Новое название проекта сохранено');
@@ -43,7 +43,7 @@
 		}
 	}, 1000);
 
-	const handleBpmUpdate = useDelay(async (bpm: number) => {
+	const handleBpmUpdate = createDebouncedCallback(async (bpm: number) => {
 		try {
 			await api.music.setMusicBpm(projectId, { custom_bpm: bpm });
 			if (project.music) {

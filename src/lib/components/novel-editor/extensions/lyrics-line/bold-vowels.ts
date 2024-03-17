@@ -3,12 +3,12 @@ import { MarkType, Schema } from 'prosemirror-model';
 import { Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { VOWELS_SET } from '$lib/components/novel-editor/extensions/lyrics-line/constants';
 
-const applyBoldMark = (tr: Transaction, schema: Schema, from: number, to: number) => {
+const applyMark = (tr: Transaction, schema: Schema, from: number, to: number) => {
 	const markType: MarkType = schema.marks.bold;
 	return tr.addMark(from, to, markType.create());
 };
 
-const removeBoldMark = (tr: Transaction, schema: Schema, from: number, to: number) => {
+const removeMark = (tr: Transaction, schema: Schema, from: number, to: number) => {
 	const markType: MarkType = schema.marks.bold;
 	tr.removeMark(from, to, markType);
 };
@@ -33,9 +33,9 @@ const BoldVowelsExtension = Extension.create({
 							const from = pos + i + 1;
 							const to = from + 1;
 							if (VOWELS_SET.has(node.textContent[i])) {
-								applyBoldMark(tr, schema, from, to);
+								applyMark(tr, schema, from, to);
 							} else {
-								removeBoldMark(tr, schema, from, to);
+								removeMark(tr, schema, from, to);
 							}
 						}
 					}

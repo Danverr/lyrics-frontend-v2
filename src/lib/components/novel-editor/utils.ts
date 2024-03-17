@@ -34,37 +34,45 @@ export function isBrowser() {
 	return typeof window !== 'undefined';
 }
 
-export function createDebouncedCallback<T extends (...args: any[]) => any>(
-	callback: T,
-	delay: number
-) {
-	let timeout: ReturnType<typeof setTimeout> | null = null;
-	return (...args: Parameters<T>) => {
-		if (timeout) clearTimeout(timeout);
-		timeout = setTimeout(() => callback(...args), delay);
-	};
-}
-
 export function anyify(obj: unknown) {
 	return obj as any;
 }
 
-export const getPrevText = (
-	editor: Editor,
-	{
-		chars,
-		offset = 0
-	}: {
-		chars: number;
-		offset?: number;
-	}
-) => {
-	// for now, we're using textBetween for now until we can figure out a way to stream markdown text
-	// with proper formatting: https://github.com/steven-tey/novel/discussions/7
-	return editor.state.doc.textBetween(
-		Math.max(0, editor.state.selection.from - chars),
-		editor.state.selection.from - offset,
-		'\n'
-	);
-	// complete(editor.storage.markdown.getMarkdown());
+export const getPrevText = (editor: Editor, chars: number, offset: number = 0) => {
+	let pos = editor.state.selection.from - offset;
+	const lines: string[] = [];
+	let collectedTextLength = 0;
+
+	const collectTextFromNode = (node, nodePos) => {
+		if (node.type.name === 'lyricsLine') {
+			const nodeText = node.textContent;
+			const remainingChars = chars - collectedTextLength;
+
+			const sliceLen = Math.min(nodeText.length, remainingChars);
+
+			if (sliceLen > 0) {
+				lines.push(nodeText.slice(-sliceLen));
+			}
+
+			collectedTextLength += sliceLen;
+			return sliceLen;
+		}
+		return 0; // Return 0 if no text was collected from this node
+	};
+
+	// Traverse the document backwards from the current selection
+	editor.state.doc.nodesBetween(0, pos, (node, nodePos) => {
+		if (collectedTextLength < chars) {
+			const textLength = collectTextFromNode(node, nodePos);
+			pos -= textLength; // Adjust position based on text collected
+			if (textLength > 0) {
+				// Adjust the position to skip over the collected text
+				pos -= node.isBlock ? 1 : 0; // Optionally adjust for block nodes
+			}
+		} else {
+			return false; // Stop iteration if we've collected enough characters
+		}
+	});
+
+	return lines.join('\n');
 };

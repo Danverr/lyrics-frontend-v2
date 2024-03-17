@@ -26,7 +26,7 @@
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import HoverPlugin from 'wavesurfer.js/plugins/hover';
 	import type { Region } from 'wavesurfer.js/plugins/regions';
-	import { useDelay } from '$lib/utils';
+	import { createDebouncedCallback } from '$lib/utils';
 
 	const EPS = 0.000001; // For float numbers comparison
 
@@ -49,7 +49,7 @@
 	let wsBpm = bpm;
 	let transitionStart = 0;
 
-	let bpmHandler = useDelay(async () => {
+	let bpmHandler = createDebouncedCallback(async () => {
 		if (ws && wsBpm !== bpm) {
 			initWavesurfer();
 		}
