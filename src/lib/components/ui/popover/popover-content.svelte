@@ -19,7 +19,7 @@
 	{sideOffset}
 	{...$$restProps}
 	class={cn(
-		'z-[9999] w-72 rounded-xl border bg-popover p-4 text-popover-foreground shadow-md outline-none',
+		'z-[9999] rounded-xl border bg-popover p-4 text-popover-foreground shadow-md outline-none',
 		className
 	)}
 >

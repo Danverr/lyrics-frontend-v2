@@ -9,7 +9,6 @@
 	import { defaultEditorProps } from './props.js';
 	import EditorBubbleMenu from '$lib/components/novel-editor/extensions/bubble-menu/index.svelte';
 	import EditorHintBubbleMenu from '$lib/components/novel-editor/extensions/hint-bubble-menu/index.svelte';
-	import { toast } from 'svelte-sonner';
 	import { Collaboration } from '@tiptap/extension-collaboration';
 	import { TiptapCollabProvider } from '@hocuspocus/provider';
 	import StarterKit from '@tiptap/starter-kit';
@@ -19,10 +18,7 @@
 	import UploadImagesPlugin from '$lib/components/novel-editor/extensions/image/upload-images';
 	import UpdatedImage from '$lib/components/novel-editor/extensions/image/updated-image';
 	import Placeholder from '@tiptap/extension-placeholder';
-	import {
-		AutocompletePlugin,
-		setAutocomplete
-	} from '$lib/components/novel-editor/extensions/autocomplete/autocomplete';
+	import { AutocompletePlugin } from '$lib/components/novel-editor/extensions/autocomplete/autocomplete';
 	import SlashCommand from '$lib/components/novel-editor/extensions/slash-command/slash-command';
 	import TiptapUnderline from '@tiptap/extension-underline';
 	import TextStyle from '@tiptap/extension-text-style';
@@ -37,16 +33,12 @@
 	import { api } from '$lib/api';
 	import BoldVowelsExtension from '$lib/components/novel-editor/extensions/lyrics-line/bold-vowels';
 	import { Skeleton } from '$lib/components/ui/skeleton';
+	import { handleApiError } from '$lib/api/utils';
 
 	/**
 	 * Document name for a collaboration
 	 */
 	export let documentName: string;
-	/**
-	 * The API route to use for the OpenAI completion API.
-	 * Defaults to "/api/generate".
-	 */
-	export let completionApi = '/api/generate';
 	/**
 	 * Additional classes to add to the editor container.
 	 * Defaults to "relative min-h-[500px] w-full max-w-screen-lg border-stone-200 bg-white p-12 px-8 sm:mb-[calc(20vh)] sm:rounded-lg sm:border sm:px-12 sm:shadow-lg".
@@ -79,15 +71,10 @@
 	 */
 	export let debounceDuration = 750;
 	/**
-	 * The key to use for storing the editor's value in local storage.
-	 * Defaults to "novel__content".
+	 * Is editor editable after loading
+	 * Defaults to true.
 	 */
-	export let storageKey = 'novel__content';
-	/**
-	 * Disable local storage read/save.
-	 * @default false
-	 */
-	export let disableLocalStorage = false;
+	export let isEditable = true;
 	/**
 	 * The editor instance. Bind to it to get access to the editor.
 	 * @example
@@ -240,7 +227,7 @@
 	onMount(() => {
 		(async () => {
 			try {
-				let token = await api.tiptap.getTiptapAccessToken();
+				let token = await api.tiptap.getTiptapToken(documentName);
 
 				provider = new TiptapCollabProvider({
 					name: documentName,
@@ -251,7 +238,7 @@
 
 				provider.on('synced', () => {
 					ready = true;
-					editor?.setEditable(true);
+					editor?.setEditable(isEditable);
 				});
 
 				editor = new Editor({
@@ -273,7 +260,7 @@
 					}
 				});
 			} catch (e) {
-				toast.error('Не удалось загрузить редактор');
+				handleApiError(e, 'Не удалось загрузить редактор');
 			}
 		})();
 

@@ -2,11 +2,14 @@
 const { apiConfig, generateResponses, config } = it;
 %>
 
-import type { AxiosInstance, AxiosRequestConfig, HeadersDefaults, ResponseType, AxiosResponse } from "axios";
-import { CURRENT_TOKEN_KEY } from '$lib/stores/localStorage';
-import { FE_AUTH_PAGE } from '$lib/api/constants';
-import * as jose from 'jose';
-import axios from "axios";
+import type {
+  AxiosInstance,
+  AxiosRequestConfig,
+  HeadersDefaults,
+  InternalAxiosRequestConfig,
+  ResponseType
+} from 'axios';
+import axios from 'axios';
 
 export type QueryParamsType = Record<string | number, any>;
 
@@ -31,6 +34,7 @@ export interface ApiConfig<SecurityDataType = unknown> extends Omit<AxiosRequest
   securityWorker?: (securityData: SecurityDataType | null) => Promise<AxiosRequestConfig | void> | AxiosRequestConfig | void;
   secure?: boolean;
   format?: ResponseType;
+  requestInterceptor?: (config: InternalAxiosRequestConfig<any>) => InternalAxiosRequestConfig<any>;
 }
 
 export enum ContentType {
@@ -47,26 +51,18 @@ export class HttpClient<SecurityDataType = unknown> {
     private secure?: boolean;
     private format?: ResponseType;
 
-    constructor({ securityWorker, secure, format, ...axiosConfig }: ApiConfig<SecurityDataType> = {}) {
-        this.instance = axios.create({ ...axiosConfig, baseURL: axiosConfig.baseURL || "<%~ apiConfig.baseUrl %>" })
-        this.instance.interceptors.request.use((config) => {
-                const jwt: string | null = localStorage.getItem(CURRENT_TOKEN_KEY)
-                ? JSON.parse(localStorage.getItem(CURRENT_TOKEN_KEY) as string)
-                : null;
+    constructor({
+        securityWorker,
+        secure,
+        format,
+        requestInterceptor,
+        ...axiosConfig
+    }: ApiConfig<SecurityDataType> = {}) {
+        this.instance = axios.create({ ...axiosConfig, baseURL: axiosConfig.baseURL || '' });
 
-                if (jwt !== null && jwt !== '') {
-                const claims = jose.decodeJwt(jwt);
-
-                if (claims.exp === undefined || Date.now() / 1000 >= claims.exp) {
-                window.location.href = FE_AUTH_PAGE;
-                }
-
-                config.headers.setAuthorization(`Bearer ${jwt}`, true);
-            } else if (config.url !== undefined && !config.url.startsWith('/auth')) {
-                window.location.href = FE_AUTH_PAGE;
-            }
-            return config;
-        });
+        if (requestInterceptor) {
+            this.instance.interceptors.request.use(requestInterceptor);
+        }
 
         this.secure = secure;
         this.format = format;

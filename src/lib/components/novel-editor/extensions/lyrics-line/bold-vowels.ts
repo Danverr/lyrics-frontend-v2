@@ -1,4 +1,4 @@
-import { Extension, NodePos } from '@tiptap/core';
+import { Extension } from '@tiptap/core';
 import { MarkType, Schema } from 'prosemirror-model';
 import { Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { VOWELS_SET } from '$lib/components/novel-editor/extensions/lyrics-line/constants';

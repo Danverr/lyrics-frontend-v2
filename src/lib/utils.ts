@@ -61,8 +61,6 @@ export const flyAndScale = (
 	};
 };
 
-const lastCalledMap = new Map();
-
 export const firstLetterUpperCase = (text: string) => {
 	return text.charAt(0).toUpperCase() + text.slice(1);
 };

@@ -4,7 +4,6 @@
 	import type { CommandItemProps } from './slash-command.js';
 	import { anyify, getPrevText } from '$lib/components/novel-editor/utils.js';
 	import { toast } from 'svelte-sonner';
-	import type { Editor } from '@tiptap/core';
 
 	export let items: CommandItemProps[] = [];
 	export let command: any;

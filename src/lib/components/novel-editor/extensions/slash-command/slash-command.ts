@@ -16,7 +16,6 @@ import {
 	Feather
 } from 'lucide-svelte';
 import CommandList from './SlashCommand.svelte';
-import { Magic } from '../../ui/icons';
 import type { SvelteComponent } from 'svelte';
 
 export interface CommandItemProps {

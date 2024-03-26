@@ -4,12 +4,6 @@
 	import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js';
 	import Minimap from 'wavesurfer.js/dist/plugins/minimap.esm.js';
 	import TimelinePlugin from 'wavesurfer.js/plugins/timeline';
-	import PauseIcon from '~icons/akar-icons/pause';
-	import PlayIcon from '~icons/akar-icons/play';
-	import RepeatIcon from '~icons/solar/repeat-bold';
-	import MagnetIcon from '~icons/solar/magnet-line-duotone';
-	import DeleteIcon from '~icons/typcn/delete';
-	import TrashIcon from '~icons/solar/trash-bin-2-linear';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
@@ -27,6 +21,14 @@
 	import HoverPlugin from 'wavesurfer.js/plugins/hover';
 	import type { Region } from 'wavesurfer.js/plugins/regions';
 	import { createDebouncedCallback } from '$lib/utils';
+	import {
+		PauseIcon,
+		DeleteIcon,
+		TrashIcon,
+		PlayIcon,
+		RepeatIcon,
+		MagnetIcon
+	} from '$lib/components/ui/icons';
 
 	const EPS = 0.000001; // For float numbers comparison
 
@@ -277,7 +279,7 @@
 					<Button
 						builders={[builder]}
 						size="icon"
-						class="absolute right-0 translate-x-full rounded-full"
+						class="absolute right-0 translate-x-full"
 						variant="ghost"
 					>
 						<DeleteIcon />
@@ -305,5 +307,5 @@
 	{#if !wsLoaded}
 		<Skeleton class="h-[185px] rounded-xl" />
 	{/if}
-	<div id="waveform" class={!wsLoaded ? 'hidden' : ''} />
+	<div id="waveform" class={!wsLoaded && 'hidden'} />
 </div>

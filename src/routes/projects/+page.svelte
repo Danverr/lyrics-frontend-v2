@@ -1,14 +1,14 @@
 <script lang="ts">
-	import DocumentIcon from '~icons/solar/document-text-bold';
-	import PlusIcon from '~icons/ic/round-plus';
-	import DeleteIcon from '~icons/typcn/delete';
+	import { DocumentIcon, PlusIcon, DeleteIcon, PeopleIcon } from '$lib/components/ui/icons';
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
 	import type { ProjectOut } from '$lib/api/api';
-	import { H3 } from '$lib/components/ui/typography';
+	import { H3, P } from '$lib/components/ui/typography';
 	import { Button } from '$lib/components/ui/button';
 	import { toast } from 'svelte-sonner';
 	import { Skeleton } from '$lib/components/ui/skeleton';
+	import { FE_PROJECT_PAGE } from '$lib/constants';
+	import { handleApiError } from '$lib/api/utils';
 
 	let projects: ProjectOut[] = [];
 	let dataLoaded = false;
@@ -17,7 +17,7 @@
 		try {
 			projects = await api.projects.getProjects();
 		} catch (e) {
-			toast('Ошибка во время загрузки проектов');
+			handleApiError(e, 'Ошибка во время загрузки проектов');
 		} finally {
 			dataLoaded = true;
 		}
@@ -58,7 +58,7 @@
 			);
 		} catch (e) {
 			projects = projectsCopy;
-			toast.error('Произошла ошибка');
+			handleApiError(e, 'Ошибка во время удаления проекта');
 		}
 	};
 </script>
@@ -71,32 +71,44 @@
 				<PlusIcon />
 			</Button>
 		</div>
-		<div class="-mr-2 flex max-h-96 flex-col gap-1 overflow-auto pr-2">
+		<div class="-mx-2 box-content flex max-h-96 w-[388px] flex-col gap-1 overflow-y-scroll px-2">
 			{#if !dataLoaded}
 				<Skeleton class="h-9 w-full" />
 				<Skeleton class="h-9 w-full" />
 				<Skeleton class="h-9 w-full" />
 			{/if}
+			{#if dataLoaded && projects.length === 0}
+				<P class="text-sm text-muted-foreground">
+					У вас пока нет проектов. Создайте новый или присоединитесь к существующему по ссылке от
+					владельца документа
+				</P>
+			{/if}
 			{#each [...projects].reverse() as project (project.project_id)}
 				<div class="flex justify-between">
 					<Button
-						variant="link"
-						class="flex  w-full justify-start px-0"
-						on:click={() => (window.location.href = `/project/${project.project_id}`)}
+						variant="ghost"
+						class="-ml-2 flex w-full justify-start pl-2"
+						on:click={() => (window.location.href = `${FE_PROJECT_PAGE}/${project.project_id}`)}
 					>
 						<div class="flex items-center">
-							<DocumentIcon class="mr-2 h-4 w-4" />
+							{#if project.is_owner}
+								<DocumentIcon class="mr-2 h-4 w-4" />
+							{:else}
+								<PeopleIcon class="mr-2 h-4 w-4" />
+							{/if}
 							{project.name}
 						</div>
 					</Button>
-					<Button
-						class="rounded-full"
-						variant="ghost"
-						size="icon"
-						on:click={() => deleteProject(project.project_id)}
-					>
-						<DeleteIcon />
-					</Button>
+					{#if project.is_owner}
+						<Button
+							class="shrink-0"
+							variant="ghost"
+							size="icon"
+							on:click={() => deleteProject(project.project_id)}
+						>
+							<DeleteIcon />
+						</Button>
+					{/if}
 				</div>
 			{/each}
 		</div>

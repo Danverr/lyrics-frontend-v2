@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { FE_AUTH_PAGE } from '$lib/api/constants';
+	import { FE_AUTH_PAGE } from '$lib/constants';
 
 	onMount(() => {
 		window.YaSendSuggestToken(FE_AUTH_PAGE);

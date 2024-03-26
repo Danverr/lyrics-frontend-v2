@@ -1,5 +1,5 @@
 import { type Editor, Extension } from '@tiptap/core';
-import { Plugin, TextSelection, Selection } from 'prosemirror-state';
+import { Plugin, TextSelection } from 'prosemirror-state';
 import { Decoration, DecorationSet } from 'prosemirror-view';
 import './styles.pcss';
 import { v4 as uuidv4 } from 'uuid';
@@ -43,7 +43,9 @@ const debounceAutocomplete = createDebouncedCallback(async (editor: Editor) => {
 			completion = completions[0].completion;
 			completion = completion.replace(/\n\s*\n/g, '\n');
 		}
-	} catch (e) {}
+	} catch (e) {
+		// Do nothing
+	}
 
 	if (currentQueryId === id) {
 		setAutocomplete(editor, {

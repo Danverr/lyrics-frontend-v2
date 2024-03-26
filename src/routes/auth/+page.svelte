@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { FE_PROJECTS_PAGE, FE_AUTH_PAGE, FE_YANDEX_ID_PAGE } from '$lib/api/constants.js';
-	import SendArrow from '~icons/fluent/send-20-filled';
+	import { FE_PROJECTS_PAGE, FE_AUTH_PAGE, FE_YANDEX_ID_PAGE } from '$lib/constants.js';
+	import { SendIcon } from '$lib/components/ui/icons';
 	import { Button } from '$lib/components/ui/button';
 	import {
 		FormDescription,
@@ -18,9 +18,10 @@
 	import { H3 } from '$lib/components/ui/typography';
 	import { toast } from 'svelte-sonner';
 	import { mode } from 'mode-watcher';
-	import { createLocalStorageStore, CURRENT_TOKEN_KEY } from '$lib/stores/localStorage';
-
-	let authToken = createLocalStorageStore(CURRENT_TOKEN_KEY, '');
+	import { decodeJwt } from 'jose';
+	import { authTokenStore } from '$lib/stores/authTokenStore';
+	import { userInfoStore } from '$lib/stores/userInfoStore';
+	import { handleApiError } from '$lib/api/utils';
 
 	export const formSchema = z.object({
 		email: z.string().min(1).max(64).email('Неверный email'),
@@ -40,7 +41,7 @@
 	}
 
 	onMount(async () => {
-		if ($authToken !== '') {
+		if ($authTokenStore !== '') {
 			window.location.href = FE_PROJECTS_PAGE;
 			return;
 		}
@@ -69,10 +70,10 @@
 
 				try {
 					let res = await api.auth.authWithYandexToken(data);
-					authToken.set(res.access_token);
+					authTokenStore.set(res.access_token);
 					window.location.href = FE_PROJECTS_PAGE;
 				} catch (e) {
-					toast.error('Ошибка при авторизации');
+					handleApiError(e, 'Ошибка при авторизации');
 				}
 
 				// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -82,7 +83,7 @@
 		}
 	});
 
-	let isFetching = false;
+	let isFetching = false; // TODO: Replace this garbage with BlockingSuspense component
 	let resendCodeCountdown = 0;
 
 	let updateResendCodeCountdown = () => {
@@ -109,11 +110,15 @@
 	let confirmEmailCode = async () => {
 		try {
 			isFetching = true;
-			let res = await api.auth.authWithEmailCode({
+
+			const token = await api.auth.authWithEmailCode({
 				username: $formData.email,
 				password: $formData.code.toString()
 			});
-			authToken.set(res.access_token);
+
+			authTokenStore.set(token.access_token);
+			userInfoStore.set(await api.users.getUser(decodeJwt(token.access_token).user_id as string));
+
 			window.location.href = FE_PROJECTS_PAGE;
 		} catch (e: unknown) {
 			if (typeof e === 'string') {
@@ -170,7 +175,7 @@
 								size="icon"
 								disabled={resendCodeCountdown !== 0}
 							>
-								<SendArrow class="h-4 w-4" />
+								<SendIcon class="h-4 w-4" />
 							</Button>
 							{#if resendCodeCountdown !== 0}
 								<div class="absolute right-[-2.75rem] flex h-9 w-9 items-center justify-center">

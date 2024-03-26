@@ -74,7 +74,6 @@ export interface CompletionOut {
  * Уровень доступа к проекту
  */
 export enum GrantLevel {
-	OWNER = 'OWNER',
 	READ_WRITE = 'READ_WRITE',
 	READ_ONLY = 'READ_ONLY'
 }
@@ -135,6 +134,12 @@ export interface ProjectBase {
  */
 export interface ProjectGrant {
 	/**
+	 * Grant Code Id
+	 * Идентификатор гранта доступа к проекту
+	 * @format uuid4
+	 */
+	grant_code_id: string;
+	/**
 	 * Project Id
 	 * Идентификатор проекта
 	 * @format uuid4
@@ -146,8 +151,18 @@ export interface ProjectGrant {
 	 * @format uuid4
 	 */
 	user_id: string;
+	/**
+	 * User Email
+	 * Email пользователя
+	 */
+	user_email: string;
 	/** Уровень доступа к проекту */
 	level: GrantLevel;
+	/**
+	 * Is Active
+	 * Активен ли грант доступа к проекту
+	 */
+	is_active: boolean;
 	/**
 	 * Created At
 	 * Дата создания гранта
@@ -231,6 +246,17 @@ export interface ProjectOut {
 	 * @format uuid4
 	 */
 	project_id: string;
+	/**
+	 * Owner User Id
+	 * Идентификатор пользователя-владельца проекта
+	 * @format uuid4
+	 */
+	owner_user_id: string;
+	/**
+	 * Is Owner
+	 * Является ли текущий пользователь владельцем проекта
+	 */
+	is_owner: boolean;
 	/**
 	 * Created At
 	 * Дата создания проекта
@@ -361,13 +387,36 @@ export interface Token {
 	token_type: string;
 }
 
-/** User */
-export interface User {
+/**
+ * UserIn
+ * Схема для пользователя при создании
+ */
+export interface UserIn {
 	/**
 	 * Email
+	 * Email пользователя
 	 * @format email
 	 */
 	email: string;
+}
+
+/**
+ * UserOut
+ * Полная схема для пользователя для отображения
+ */
+export interface UserOut {
+	/**
+	 * Email
+	 * Email пользователя
+	 * @format email
+	 */
+	email: string;
+	/**
+	 * User Id
+	 * Идентификатор пользователя
+	 * @format uuid4
+	 */
+	user_id: string;
 }
 
 /** ValidationError */
@@ -397,11 +446,14 @@ export interface WordMeaning {
 	source: string;
 }
 
-import { FE_AUTH_PAGE } from '$lib/api/constants';
-import { CURRENT_TOKEN_KEY } from '$lib/stores/localStorage';
-import type { AxiosInstance, AxiosRequestConfig, HeadersDefaults, ResponseType } from 'axios';
+import type {
+	AxiosInstance,
+	AxiosRequestConfig,
+	HeadersDefaults,
+	InternalAxiosRequestConfig,
+	ResponseType
+} from 'axios';
 import axios from 'axios';
-import * as jose from 'jose';
 
 export type QueryParamsType = Record<string | number, any>;
 
@@ -430,6 +482,7 @@ export interface ApiConfig<SecurityDataType = unknown>
 	) => Promise<AxiosRequestConfig | void> | AxiosRequestConfig | void;
 	secure?: boolean;
 	format?: ResponseType;
+	requestInterceptor?: (config: InternalAxiosRequestConfig<any>) => InternalAxiosRequestConfig<any>;
 }
 
 export enum ContentType {
@@ -447,27 +500,19 @@ export class HttpClient<SecurityDataType = unknown> {
 	private format?: ResponseType;
 
 	constructor(
-		{ securityWorker, secure, format, ...axiosConfig }: ApiConfig<SecurityDataType> = {}
+		{
+			securityWorker,
+			secure,
+			format,
+			requestInterceptor,
+			...axiosConfig
+		}: ApiConfig<SecurityDataType> = {}
 	) {
 		this.instance = axios.create({ ...axiosConfig, baseURL: axiosConfig.baseURL || '' });
-		this.instance.interceptors.request.use((config) => {
-			const jwt: string | null = localStorage.getItem(CURRENT_TOKEN_KEY)
-				? JSON.parse(localStorage.getItem(CURRENT_TOKEN_KEY) as string)
-				: null;
 
-			if (jwt !== null && jwt !== '') {
-				const claims = jose.decodeJwt(jwt);
-
-				if (claims.exp === undefined || Date.now() / 1000 >= claims.exp) {
-					window.location.href = FE_AUTH_PAGE;
-				}
-
-				config.headers.setAuthorization(`Bearer ${jwt}`, true);
-			} else if (config.url !== undefined && !config.url.startsWith('/auth')) {
-				window.location.href = FE_AUTH_PAGE;
-			}
-			return config;
-		});
+		if (requestInterceptor) {
+			this.instance.interceptors.request.use(requestInterceptor);
+		}
 
 		this.secure = secure;
 		this.format = format;
@@ -557,7 +602,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title Lyrics IDE Backend
- * @version 1.8.0
+ * @version 1.21.0
  */
 export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDataType> {
 	auth = {
@@ -569,7 +614,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
 		 * @summary Send Email Auth Code
 		 * @request POST:/auth/email
 		 */
-		sendEmailAuthCode: (data: User, params: RequestParams = {}) =>
+		sendEmailAuthCode: (data: UserIn, params: RequestParams = {}) =>
 			this.request<any, HTTPValidationError>({
 				path: `/auth/email`,
 				method: 'POST',
@@ -659,7 +704,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
 		 *
 		 * @tags Проекты
 		 * @name UpdateProject
-		 * @summary Изменить проект
+		 * @summary Изменить проект. Уровень доступа: владелец проекта
 		 * @request PATCH:/projects/{project_id}
 		 * @secure
 		 */
@@ -693,7 +738,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
 			}),
 
 		/**
-		 * @description Удалить проект
+		 * @description Удалить проект. Приводит к удалению всех текстов проекта, музыки, кодов доступа и прав.
 		 *
 		 * @tags Проекты
 		 * @name DeleteProject
@@ -973,11 +1018,30 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
 		 * @name GetTiptapAccessToken
 		 * @summary Get Tiptap Access Token
 		 * @request GET:/tiptap/token
+		 * @deprecated
 		 * @secure
 		 */
 		getTiptapAccessToken: (params: RequestParams = {}) =>
 			this.request<Token, any>({
 				path: `/tiptap/token`,
+				method: 'GET',
+				secure: true,
+				format: 'json',
+				...params
+			}),
+
+		/**
+		 * @description Получение JWT токена для TipTap под конкретный текст. { "iat": <utcnow()>, "iss": "https://lyrics-backend.k8s-1.sslane.ru", "nbf": <utcnow()>, "aud": <tiptap-app-id>, "allowedDocumentNames": [<text_id>], "readonlyDocumentNames": [<text_id>] # если grant_level == "READ_ONLY", иначе [] (полный доступ) }
+		 *
+		 * @tags TipTap
+		 * @name GetTiptapToken
+		 * @summary Get Tiptap Access Token V2
+		 * @request GET:/tiptap/token/{text_id}
+		 * @secure
+		 */
+		getTiptapToken: (textId: string, params: RequestParams = {}) =>
+			this.request<Token, void | HTTPValidationError>({
+				path: `/tiptap/token/${textId}`,
 				method: 'GET',
 				secure: true,
 				format: 'json',
@@ -1012,7 +1076,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
 		 * @tags Доступ
 		 * @name GenerateProjectShareCode
 		 * @summary Получить код на получение доступа к проекту
-		 * @request GET:/grant/{project_id}
+		 * @request GET:/grant/project/{project_id}
 		 * @secure
 		 */
 		generateProjectShareCode: (
@@ -1033,7 +1097,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
 			params: RequestParams = {}
 		) =>
 			this.request<ProjectGrantCode, void | HTTPValidationError>({
-				path: `/grant/${projectId}`,
+				path: `/grant/project/${projectId}`,
 				method: 'GET',
 				query: query,
 				secure: true,
@@ -1042,17 +1106,138 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
 			}),
 
 		/**
-		 * @description Активировать код доступа к проекту. Проверяет наличие и активность кода, активирует в случае успеха проерок.
+		 * @description Активировать код доступа к проекту. Проверяет наличие и активность кода, активирует в случае успеха проверок. В случае, когда пользователь активирует новый код доступа по проекту, предыдущий доступ перезаписывается.
 		 *
 		 * @tags Доступ
 		 * @name ActivateProjectShareCode
 		 * @summary Активировать код доступа к проекту
-		 * @request GET:/grant/activate/{grant_code_id}
+		 * @request GET:/grant/codes/activate/{grant_code_id}
 		 * @secure
 		 */
 		activateProjectShareCode: (grantCodeId: string, params: RequestParams = {}) =>
 			this.request<ProjectGrant, void | HTTPValidationError>({
-				path: `/grant/activate/${grantCodeId}`,
+				path: `/grant/codes/activate/${grantCodeId}`,
+				method: 'GET',
+				secure: true,
+				format: 'json',
+				...params
+			}),
+
+		/**
+		 * @description Получить список пользователей, имеющих доступ к проекту
+		 *
+		 * @tags Доступ
+		 * @name GetProjectUsers
+		 * @summary Получить список пользователей, имеющих доступ к проекту
+		 * @request GET:/grant/project/{project_id}/users
+		 * @secure
+		 */
+		getProjectUsers: (projectId: string, params: RequestParams = {}) =>
+			this.request<ProjectGrant[], void | HTTPValidationError>({
+				path: `/grant/project/${projectId}/users`,
+				method: 'GET',
+				secure: true,
+				format: 'json',
+				...params
+			}),
+
+		/**
+		 * @description Отозвать доступ к проекту
+		 *
+		 * @tags Доступ
+		 * @name RevokeProjectAccess
+		 * @summary Отозвать доступ к проекту
+		 * @request DELETE:/grant/{project_id}/users/{user_id}
+		 * @secure
+		 */
+		revokeProjectAccess: (userId: string, projectId: string, params: RequestParams = {}) =>
+			this.request<ProjectGrant, void | HTTPValidationError>({
+				path: `/grant/${projectId}/users/${userId}`,
+				method: 'DELETE',
+				secure: true,
+				format: 'json',
+				...params
+			}),
+
+		/**
+		 * @description Изменить уровень доступа к проекту
+		 *
+		 * @tags Доступ
+		 * @name UpdateProjectAccess
+		 * @summary Изменить уровень доступа
+		 * @request PATCH:/grant/{project_id}/users/{user_id}
+		 * @secure
+		 */
+		updateProjectAccess: (
+			userId: string,
+			projectId: string,
+			query: {
+				/**
+				 * New Level
+				 * новый уровень доступа
+				 */
+				new_level: GrantLevel;
+			},
+			params: RequestParams = {}
+		) =>
+			this.request<ProjectGrant, void | HTTPValidationError>({
+				path: `/grant/${projectId}/users/${userId}`,
+				method: 'PATCH',
+				query: query,
+				secure: true,
+				format: 'json',
+				...params
+			}),
+
+		/**
+		 * @description Получить список кодов доступа к проекту
+		 *
+		 * @tags Доступ
+		 * @name GetProjectCodes
+		 * @summary Получить список кодов доступа к проекту
+		 * @request GET:/grant/projects/{project_id}/codes
+		 * @secure
+		 */
+		getProjectCodes: (projectId: string, params: RequestParams = {}) =>
+			this.request<ProjectGrantCode[], void | HTTPValidationError>({
+				path: `/grant/projects/${projectId}/codes`,
+				method: 'GET',
+				secure: true,
+				format: 'json',
+				...params
+			}),
+
+		/**
+		 * @description Деактивировать код доступа к проекту (пользователи не блокируются, только запрещается подключение новых по этой ссылке)
+		 *
+		 * @tags Доступ
+		 * @name DeactivateProjectGrantCode
+		 * @summary Деактивировать код доступа к проекту
+		 * @request DELETE:/grant/codes/{grant_code_id}
+		 * @secure
+		 */
+		deactivateProjectGrantCode: (grantCodeId: string, params: RequestParams = {}) =>
+			this.request<any, void | HTTPValidationError>({
+				path: `/grant/codes/${grantCodeId}`,
+				method: 'DELETE',
+				secure: true,
+				format: 'json',
+				...params
+			})
+	};
+	users = {
+		/**
+		 * @description Получить информацию о пользователе. Можно получить информацию только про себя.
+		 *
+		 * @tags Пользователи
+		 * @name GetUser
+		 * @summary Получить информацию о пользователе
+		 * @request GET:/users/{user_id}
+		 * @secure
+		 */
+		getUser: (userId: string, params: RequestParams = {}) =>
+			this.request<UserOut, void | HTTPValidationError>({
+				path: `/users/${userId}`,
 				method: 'GET',
 				secure: true,
 				format: 'json',
