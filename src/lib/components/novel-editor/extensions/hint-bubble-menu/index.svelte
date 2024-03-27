@@ -9,6 +9,8 @@
 	import { type Undef } from '$lib/utils';
 	import { P } from '$lib/components/ui/typography';
 	import { toast } from 'svelte-sonner';
+	import { Skeleton } from '$lib/components/ui/skeleton';
+	import { getApiErrorMessage } from '$lib/api/utils';
 
 	export let editor: Editor;
 
@@ -26,7 +28,7 @@
 		const { from, to } = editor.view.state.selection;
 
 		let text = editor.state.doc.textBetween(from, to).trim();
-		if (text.length > 1 && !text.includes(' ')) {
+		if (text.length > 3 && !text.includes(' ')) {
 			selectedText = text;
 			return true;
 		}
@@ -39,8 +41,11 @@
 	let element: HTMLElement;
 	let selectedText = '';
 	let meaning: Undef<WordMeaning>;
+	let meaningPromise: Promise<any>;
 	let synonyms: string[] = [];
+	let synonymsPromise: Promise<any>;
 	let rhymes: string[] = [];
+	let rhymesPromise: Promise<any>;
 	const SYNONYMS_TO_DISPLAY = 5;
 	const RHYMES_TO_DISPLAY = 5;
 
@@ -49,11 +54,9 @@
 	}
 
 	$: if (selectedText) {
-		meaning = undefined;
-		synonyms = [];
-
 		// Загрузка значения
-		api.words
+		meaning = undefined;
+		meaningPromise = api.words
 			.getWordMeanings({ word: selectedText })
 			.then((res) => {
 				if (res.length) {
@@ -63,7 +66,8 @@
 			.catch();
 
 		// Загрузка синонимов
-		api.words
+		synonyms = [];
+		synonymsPromise = api.words
 			.getWordSynonyms({ word: selectedText })
 			.then((res) => {
 				synonyms = res.slice(0, SYNONYMS_TO_DISPLAY);
@@ -71,7 +75,8 @@
 			.catch();
 
 		// Загрузка рифм
-		api.words
+		rhymes = [];
+		rhymesPromise = api.words
 			.getWordRhyming({ word: selectedText })
 			.then((res) => {
 				rhymes = res.slice(0, RHYMES_TO_DISPLAY);
@@ -121,30 +126,48 @@
 </script>
 
 <div class="w-96 overflow-auto" bind:this={element}>
-	{#if meaning || synonyms.length || rhymes.length}
-		<Card class="p-5 pt-3">
-			<CardContent class="flex flex-col gap-2">
-				{#if meaning}
-					<div>
-						<P class="font-semibold">Значение</P>
+	<Card class="p-5 pt-3">
+		<CardContent class="flex flex-col gap-2">
+			<div>
+				<P class="font-semibold">Значение</P>
+				{#await meaningPromise}
+					<Skeleton class="mt-1 h-8 w-full" />
+				{:then _}
+					{#if meaning}
 						<P>{meaning.meaning}</P>
-					</div>
-				{/if}
-				{#if synonyms.length}
-					<div>
-						<P class="mb-1 font-semibold">Синонимы</P>
-						<div class="flex flex-wrap gap-2">
+					{:else}
+						<P>Значение не найдено</P>
+					{/if}
+				{:catch err}
+					<P>{getApiErrorMessage(err)}</P>
+				{/await}
+			</div>
+			<div>
+				<P class="mb-1 font-semibold">Синонимы</P>
+				<div class="flex flex-wrap gap-2">
+					{#await synonymsPromise}
+						<Skeleton class="h-8 w-full" />
+					{:then _}
+						{#if synonyms.length}
 							{#each synonyms as synonym}
 								<Button variant="outline" on:click={() => replaceText(synonym)}>
 									{synonym}
 								</Button>
 							{/each}
-						</div>
-					</div>
-				{/if}
-				{#if rhymes.length}
-					<div>
-						<P class="mb-1 font-semibold">Рифмы</P>
+						{:else}
+							<P>Синонимы не найдены</P>
+						{/if}
+					{:catch err}
+						<P>{getApiErrorMessage(err)}</P>
+					{/await}
+				</div>
+			</div>
+			<div>
+				<P class="mb-1 font-semibold">Рифмы</P>
+				{#await rhymesPromise}
+					<Skeleton class="h-8 w-full" />
+				{:then _}
+					{#if rhymes.length}
 						<div class="flex flex-wrap gap-2">
 							{#each rhymes as rhyme}
 								<Button variant="outline" on:click={() => copyText(rhyme)}>
@@ -152,9 +175,13 @@
 								</Button>
 							{/each}
 						</div>
-					</div>
-				{/if}
-			</CardContent>
-		</Card>
-	{/if}
+					{:else}
+						<P>Рифмы не найдены</P>
+					{/if}
+				{:catch err}
+					<P>{getApiErrorMessage(err)}</P>
+				{/await}
+			</div>
+		</CardContent>
+	</Card>
 </div>

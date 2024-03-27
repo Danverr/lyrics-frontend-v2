@@ -12,6 +12,7 @@
 	import { handleApiError } from '$lib/api/utils';
 
 	export let project: Writable<ProjectOut>;
+	export let isEditable: boolean;
 	export let textNamePlaceholder: string;
 	export let activeText: Writable<TextVariantCompact>;
 
@@ -55,6 +56,7 @@
 	<div class="flex flex-col">
 		<Textarea
 			wrap="soft"
+			readonly={isEditable ? null : true}
 			autoresize={true}
 			on:keydown={handleProjectNameUpdate}
 			class="no-border mb-2 h-9 w-full rounded-none p-0 pl-6 text-xl font-bold tracking-tight"
@@ -77,19 +79,27 @@
 							{!text.name ? textNamePlaceholder : text.name}
 						</P>
 					</Button>
-					<Button
-						class="ml-auto shrink-0"
-						variant="ghost"
-						size="icon"
-						on:click={() => deleteText(text.text_id)}
-					>
-						<DeleteIcon />
-					</Button>
+					{#if isEditable}
+						<Button
+							class="ml-auto shrink-0"
+							variant="ghost"
+							size="icon"
+							on:click={() => deleteText(text.text_id)}
+						>
+							<DeleteIcon />
+						</Button>
+					{/if}
 				</div>
 			{/each}
 		{/key}
-		<Button variant="ghost" class="muted-opacity -mx-2 mt-2 justify-start px-2" on:click={addText}>
-			<PlusIcon class="mr-2 h-4 w-4" />Новый текст
-		</Button>
+		{#if isEditable}
+			<Button
+				variant="ghost"
+				class="muted-opacity -mx-2 mt-2 justify-start px-2"
+				on:click={addText}
+			>
+				<PlusIcon class="mr-2 h-4 w-4" />Новый текст
+			</Button>
+		{/if}
 	</div>
 </Portal>

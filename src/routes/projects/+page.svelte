@@ -33,8 +33,7 @@
 			{
 				loading: 'Создаем новый проект...',
 				success: (res) => {
-					projects.push(res);
-					projects = projects;
+					projects = [res, ...projects];
 					return 'Новый проект создан';
 				},
 				error: 'Произошла ошибка'

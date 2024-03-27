@@ -6,20 +6,22 @@ import { v4 as uuidv4 } from 'uuid';
 import { createDebouncedCallback } from '$lib/utils';
 import { api } from '$lib/api';
 import { getPrevText } from '$lib/components/novel-editor/utils';
+import { LYRICS_LINE_NODE_NAME } from '$lib/components/novel-editor/extensions/lyrics-line/lyrics-line';
 
 let triggerAutocomplete = true;
 
 const loaderDots = `
-<span class="inline-flex loader-dots w-fit items-center gap-1">
+<div class="inline-flex loader-dots w-fit items-center gap-1">
 <span class="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground"></span>
 <span class="animation-delay-100 h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground"></span>
 <span class="animation-delay-200 h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground"></span>
-</span>
+</div>
 `;
 
 type AutocompleteStorage = {
 	suggestion: string;
-	loading: boolean;
+	isLoading: boolean;
+	isActive: boolean;
 };
 
 let currentQueryId: string = '';
@@ -30,7 +32,7 @@ const debounceAutocomplete = createDebouncedCallback(async (editor: Editor) => {
 
 	setAutocomplete(editor, {
 		suggestion: '',
-		loading: true
+		isLoading: true
 	});
 
 	let completion = '';
@@ -50,36 +52,57 @@ const debounceAutocomplete = createDebouncedCallback(async (editor: Editor) => {
 	if (currentQueryId === id) {
 		setAutocomplete(editor, {
 			suggestion: completion,
-			loading: false
+			isLoading: false
 		});
 	}
 });
+
+const isSelectionValid = (editor: Editor) => {
+	const cursorPos = editor.state.selection.$head;
+	const currentNode = cursorPos.node();
+	const textAfter = cursorPos.nodeAfter?.text?.trim() ?? '';
+
+	return (
+		editor.state.selection.empty &&
+		currentNode.type === editor.schema.nodes.lyricsLine &&
+		textAfter === ''
+	);
+};
 
 const handleEditorUpdate = (editor: Editor) => {
 	currentQueryId = '';
 	setAutocomplete(editor, {
 		suggestion: '',
-		loading: false
+		isLoading: false
 	});
-	debounceAutocomplete(editor);
+
+	if (isSelectionValid(editor)) {
+		debounceAutocomplete(editor);
+	}
 };
 
-export const setAutocomplete = (
-	editor: Editor | undefined,
-	value: Partial<AutocompleteStorage>
-) => {
+type SetAutocompleteValueType = Partial<Omit<AutocompleteStorage, 'isActive'>>;
+
+export const setAutocomplete = (editor: Editor | undefined, value: SetAutocompleteValueType) => {
 	if (editor === undefined) {
 		return;
 	}
 
 	let isUpdated = false;
+	const storage: AutocompleteStorage = editor.storage.autocompletePlugin;
 
-	for (const key in editor.storage.autocompletePlugin) {
-		if (key in value && editor.storage.autocompletePlugin[key] !== (value as any)[key]) {
+	for (const stringKey of Object.keys(value)) {
+		const key = stringKey as keyof SetAutocompleteValueType;
+		if (storage[key] !== value[key]) {
 			isUpdated = true;
-			editor.storage.autocompletePlugin[key] = (value as any)[key];
+			// eslint-disable-next-line
+			// @ts-ignore
+			storage[key] = value[key];
 		}
 	}
+
+	storage.isActive = storage.isLoading || storage.suggestion !== '';
+	editor.storage.autocompletePlugin = storage;
 
 	// Hack to update editor
 	if (isUpdated) {
@@ -100,7 +123,8 @@ export const AutocompletePlugin = Extension.create({
 	addStorage() {
 		return {
 			suggestion: '',
-			loading: false
+			isLoading: false,
+			isActive: false
 		};
 	},
 
@@ -112,14 +136,8 @@ export const AutocompletePlugin = Extension.create({
 					.focus()
 					.command(({ tr, editor }) => {
 						const cursorPos = tr.selection.$head.pos;
-						const currentNode = tr.selection.$head.node();
-						const nextNode = tr.doc.nodeAt(cursorPos);
 
-						if (
-							this.editor.storage.autocompletePlugin.suggestion &&
-							currentNode.content.size > 0 &&
-							(!nextNode || nextNode.isBlock)
-						) {
+						if (this.editor.storage.autocompletePlugin.suggestion && isSelectionValid(editor)) {
 							const lines = this.editor.storage.autocompletePlugin.suggestion.split('\n');
 							let pos = cursorPos;
 
@@ -129,7 +147,11 @@ export const AutocompletePlugin = Extension.create({
 									tr.insertText(line);
 									pos += line.length;
 								} else {
-									const node = editor.schema.node('lyricsLine', null, editor.schema.text(line));
+									const node = editor.schema.node(
+										LYRICS_LINE_NODE_NAME,
+										null,
+										editor.schema.text(line)
+									);
 									tr.insert(pos, node);
 									pos += node.nodeSize;
 								}
@@ -167,7 +189,7 @@ export const AutocompletePlugin = Extension.create({
 
 						const params: AutocompleteStorage = this.editor.storage.autocompletePlugin;
 						let textContent = params.suggestion ?? '';
-						if (params.loading) {
+						if (params.isLoading) {
 							textContent = loaderDots;
 						} else {
 							textContent = textContent.replaceAll('\n', '<br/>');
@@ -178,19 +200,14 @@ export const AutocompletePlugin = Extension.create({
 						}
 
 						const cursorPos = selection.$head.pos;
-						const currentNode = selection.$head.node();
-						const nextNode = transaction.doc.nodeAt(cursorPos);
 
-						if (currentNode.content.size > 0 && (!nextNode || nextNode.isBlock)) {
+						if (isSelectionValid(this.editor)) {
 							const suggestionDecoration = Decoration.widget(
 								cursorPos,
 								() => {
 									const parentNode = document.createElement('span');
-
-									// Create a span for the suggestion
 									parentNode.innerHTML = textContent;
 									parentNode.classList.add(this.options.className);
-
 									return parentNode;
 								},
 								{ side: 1 }

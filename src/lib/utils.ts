@@ -6,7 +6,11 @@ import { formatRelative, type FormatRelativeOptions } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
 // FOR SHITCODE ONLY
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+// eslint-disable-next-line
+// @ts-ignore
 
 export type Undef<T> = T | undefined;
 export type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;

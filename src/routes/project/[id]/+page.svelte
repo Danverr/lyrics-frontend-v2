@@ -2,7 +2,7 @@
 	import { BackIcon } from '$lib/components/ui/icons';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import type { ProjectOut, TextVariantCompact } from '$lib/api/api';
+	import { GrantLevel, type ProjectOut, type TextVariantCompact } from '$lib/api/api';
 	import { api } from '$lib/api';
 	import { toast } from 'svelte-sonner';
 	import { Editor } from '$lib/components/novel-editor/index.js';
@@ -23,6 +23,12 @@
 	let project = writable<ProjectOut>();
 	let activeText = writable<TextVariantCompact>();
 	const textNamePlaceholder = 'Без названия';
+	let isEditable: boolean;
+
+	$: if ($project) {
+		isEditable = $project.grant_level !== GrantLevel.READ_ONLY;
+		console.log(isEditable);
+	}
 
 	let handleTextNameUpdate = createDebouncedCallback(async () => {
 		try {
@@ -51,6 +57,7 @@
 				$project.texts = [];
 			}
 			if ($project.texts.length) {
+				$project.texts = $project.texts.sort((a, b) => (a.created_at < b.created_at ? -1 : 1));
 				$activeText = $project.texts[$project.texts.length - 1];
 			}
 		} catch (e) {
@@ -91,6 +98,11 @@
 <Portal target="#appBarLeft">
 	<Button variant="ghost" size="icon" on:click={returnBack}><BackIcon class="h-5 w-5" /></Button>
 </Portal>
+{#if !isEditable}
+	<Portal target="#appBarCenter">
+		<P class="bg-background text-sm text-muted-foreground">Документ открыт в режиме просмотра</P>
+	</Portal>
+{/if}
 {#if $project?.is_owner}
 	<Portal target="#appBarRight">
 		<ShareButton {project} />
@@ -98,7 +110,7 @@
 {/if}
 
 {#if $project !== undefined}
-	<TextsSidebar {project} {activeText} {textNamePlaceholder} />
+	<TextsSidebar {project} {activeText} {textNamePlaceholder} {isEditable} />
 	<div class="flex w-full flex-col items-center pb-[500px] pt-16">
 		<div class="flex w-[44rem] flex-col">
 			<div class="mb-8">
@@ -106,6 +118,7 @@
 					<Player music={$project.music} onDelete={deleteMusic} onBpmChange={handleBpmUpdate} />
 				{:else}
 					<Dropzone
+						disabled={!isEditable}
 						accept="audio/*"
 						multiple={false}
 						disableDefaultStyles
@@ -122,13 +135,14 @@
 				wrap="soft"
 				autoresize={true}
 				on:keydown={handleTextNameUpdate}
+				readonly={isEditable ? null : true}
 				class="no-border h-auto w-full rounded-none p-0 text-[40px] font-bold tracking-tight"
 				placeholder={textNamePlaceholder}
 				bind:value={$activeText.name}
 			/>
 			{#if $activeText}
 				{#key $activeText.text_id}
-					<Editor documentName={$activeText.text_id} />
+					<Editor documentName={$activeText.text_id} {isEditable} />
 				{/key}
 			{/if}
 		</div>

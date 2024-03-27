@@ -17,6 +17,7 @@ import {
 } from 'lucide-svelte';
 import CommandList from './SlashCommand.svelte';
 import type { SvelteComponent } from 'svelte';
+import { LYRICS_LINE_NODE_NAME } from '$lib/components/novel-editor/extensions/lyrics-line/lyrics-line';
 
 export interface CommandItemProps {
 	title: string;
@@ -53,21 +54,20 @@ const Command = Extension.create({
 
 const getSuggestionItems = ({ query }: { query: string }) => {
 	return [
-		// {
-		// 	title: 'Continue writing',
-		// 	description: 'Use AI to expand your thoughts',
-		// 	searchTerms: ['gpt'],
-		// 	icon: Magic
-		// },
-		// {
-		// 	title: 'Send Feedback',
-		// 	description: 'Let us know how we can improve',
-		// 	icon: MessageSquarePlus,
-		// 	command: ({ editor, range }: CommandProps) => {
-		// 		editor.chain().focus().deleteRange(range).run();
-		// 		window.open('/feedback', '_blank');
-		// 	}
-		// },
+		{
+			title: 'Строка песни',
+			description: 'Как текст, только лучше',
+			searchTerms: ['p', 'параграф', 'текст', 'песня', 'lyrics'],
+			icon: Feather,
+			command: ({ editor, range }: CommandProps) => {
+				editor
+					.chain()
+					.focus()
+					.deleteRange(range)
+					.toggleNode('paragraph', LYRICS_LINE_NODE_NAME)
+					.run();
+			}
+		},
 		{
 			title: 'Текст',
 			description: 'Просто обычный текст',
@@ -75,15 +75,6 @@ const getSuggestionItems = ({ query }: { query: string }) => {
 			icon: Text,
 			command: ({ editor, range }: CommandProps) => {
 				editor.chain().focus().deleteRange(range).toggleNode('paragraph', 'paragraph').run();
-			}
-		},
-		{
-			title: 'Строка песни',
-			description: 'Как текст, только лучше',
-			searchTerms: ['p', 'параграф', 'текст', 'песня', 'lyrics'],
-			icon: Feather,
-			command: ({ editor, range }: CommandProps) => {
-				editor.chain().focus().deleteRange(range).toggleNode('paragraph', 'lyricsLine').run();
 			}
 		},
 		{

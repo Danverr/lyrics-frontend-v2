@@ -12,8 +12,10 @@ const countVowels = (text: string) => {
 	return count;
 };
 
+export const LYRICS_LINE_NODE_NAME = 'lyricsLine';
+
 export const LyricsLine = Paragraph.extend({
-	name: 'lyricsLine',
+	name: LYRICS_LINE_NODE_NAME,
 
 	addAttributes() {
 		return {
@@ -25,7 +27,7 @@ export const LyricsLine = Paragraph.extend({
 		this.editor.state.doc.descendants((node, pos) => {
 			const count = countVowels(node.textContent);
 
-			if (node.type.name === 'lyricsLine' && node.attrs.vowels !== count) {
+			if (node.type.name === LYRICS_LINE_NODE_NAME && node.attrs.vowels !== count) {
 				this.editor.view.dispatch(
 					this.editor.view.state.tr.setNodeMarkup(pos, undefined, {
 						vowels: count
@@ -38,7 +40,7 @@ export const LyricsLine = Paragraph.extend({
 	addNodeView() {
 		return ({ editor, node, getPos }) => {
 			const container = document.createElement('p');
-			container.classList.add('lyricsLine');
+			container.classList.add(LYRICS_LINE_NODE_NAME);
 
 			const content = document.createElement('span');
 			content.contentEditable = 'true';
@@ -65,18 +67,23 @@ export const LyricsLine = Paragraph.extend({
 		return {
 			Enter: () => {
 				const selection = this.editor.state.selection;
-				const pos = selection.from;
-				const resPos = this.editor.state.doc.resolve(pos);
-				const parNode = resPos.parent;
+				const currentNode = selection.$head.node();
+				const textBefore = selection.$from.nodeBefore?.text ?? '';
+				const textAfter = selection.$to.nodeAfter?.text ?? '';
 
-				if (!selection.empty) {
-					return false;
-				}
-
-				if (parNode.type.name === this.name) {
-					this.editor.commands.insertContentAt(pos, {
-						type: this.name
-					});
+				if (currentNode.type.name === this.name && (textAfter === '' || textBefore === '')) {
+					const insertAfter = textAfter === '' && textBefore !== '';
+					this.editor
+						.chain()
+						.deleteSelection()
+						.insertContentAt(
+							selection.from - (insertAfter ? 0 : 1),
+							{
+								type: this.name
+							},
+							{ updateSelection: insertAfter }
+						)
+						.run();
 					return true;
 				}
 

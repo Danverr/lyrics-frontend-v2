@@ -257,6 +257,8 @@ export interface ProjectOut {
 	 * Является ли текущий пользователь владельцем проекта
 	 */
 	is_owner: boolean;
+	/** Уровень доступа к проекту. null - владелец проекта */
+	grant_level: GrantLevel | null;
 	/**
 	 * Created At
 	 * Дата создания проекта
@@ -602,7 +604,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
 /**
  * @title Lyrics IDE Backend
- * @version 1.21.0
+ * @version 1.23.0
  */
 export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDataType> {
 	auth = {
@@ -1219,6 +1221,24 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
 		deactivateProjectGrantCode: (grantCodeId: string, params: RequestParams = {}) =>
 			this.request<any, void | HTTPValidationError>({
 				path: `/grant/codes/${grantCodeId}`,
+				method: 'DELETE',
+				secure: true,
+				format: 'json',
+				...params
+			}),
+
+		/**
+		 * @description Покинуть проект
+		 *
+		 * @tags Доступ
+		 * @name LeaveProject
+		 * @summary Покинуть проект
+		 * @request DELETE:/grant/{project_id}/leave
+		 * @secure
+		 */
+		leaveProject: (projectId: string, params: RequestParams = {}) =>
+			this.request<ProjectGrant, void | HTTPValidationError>({
+				path: `/grant/${projectId}/leave`,
 				method: 'DELETE',
 				secure: true,
 				format: 'json',

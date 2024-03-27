@@ -2,6 +2,7 @@ import { Extension } from '@tiptap/core';
 import { MarkType, Schema } from 'prosemirror-model';
 import { Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { VOWELS_SET } from '$lib/components/novel-editor/extensions/lyrics-line/constants';
+import { LYRICS_LINE_NODE_NAME } from '$lib/components/novel-editor/extensions/lyrics-line/lyrics-line';
 
 const applyMark = (tr: Transaction, schema: Schema, from: number, to: number) => {
 	const markType: MarkType = schema.marks.bold;
@@ -28,7 +29,7 @@ const BoldVowelsExtension = Extension.create({
 				const tr = newState.tr;
 
 				newState.doc.descendants((node, pos) => {
-					if (node.type.name === 'lyricsLine') {
+					if (node.type.name === LYRICS_LINE_NODE_NAME) {
 						for (let i = 0; i < node.textContent.length; i++) {
 							const from = pos + i + 1;
 							const to = from + 1;

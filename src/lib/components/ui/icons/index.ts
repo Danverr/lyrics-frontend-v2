@@ -1,3 +1,5 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
 import PauseIcon from '~icons/akar-icons/pause';
 import PlayIcon from '~icons/akar-icons/play';
 import RepeatIcon from '~icons/solar/repeat-bold';

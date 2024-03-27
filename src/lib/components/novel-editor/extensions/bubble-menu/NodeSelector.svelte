@@ -25,6 +25,12 @@
 
 	$: items = [
 		{
+			name: 'Строка песни',
+			icon: Feather,
+			command: () => editor.chain().focus().toggleNode('paragraph', 'lyricsLine').run(),
+			isActive: editor.isActive('lyricsLine')
+		},
+		{
 			name: 'Текст',
 			icon: TextIcon,
 			command: () => editor.chain().focus().toggleNode('paragraph', 'paragraph').run(),
@@ -32,12 +38,6 @@
 				editor.isActive('paragraph') &&
 				!editor.isActive('bulletList') &&
 				!editor.isActive('orderedList')
-		},
-		{
-			name: 'Строка песни',
-			icon: Feather,
-			command: () => editor.chain().focus().toggleNode('paragraph', 'lyricsLine').run(),
-			isActive: editor.isActive('lyricsLine')
 		},
 		{
 			name: 'Заголовок 1',

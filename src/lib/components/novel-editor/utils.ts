@@ -1,6 +1,8 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import type { Editor } from '@tiptap/core';
+import { type Editor } from '@tiptap/core';
+import { type Node } from 'prosemirror-model';
+import { LYRICS_LINE_NODE_NAME } from '$lib/components/novel-editor/extensions/lyrics-line/lyrics-line';
 
 export const noop = () => {
 	// do nothing
@@ -43,8 +45,8 @@ export const getPrevText = (editor: Editor, chars: number, offset: number = 0) =
 	const lines: string[] = [];
 	let collectedTextLength = 0;
 
-	const collectTextFromNode = (node, nodePos) => {
-		if (node.type.name === 'lyricsLine') {
+	const collectTextFromNode = (node: Node) => {
+		if (node.type.name === LYRICS_LINE_NODE_NAME) {
 			const nodeText = node.textContent;
 			const remainingChars = chars - collectedTextLength;
 
@@ -61,9 +63,9 @@ export const getPrevText = (editor: Editor, chars: number, offset: number = 0) =
 	};
 
 	// Traverse the document backwards from the current selection
-	editor.state.doc.nodesBetween(0, pos, (node, nodePos) => {
+	editor.state.doc.nodesBetween(0, pos, (node) => {
 		if (collectedTextLength < chars) {
-			const textLength = collectTextFromNode(node, nodePos);
+			const textLength = collectTextFromNode(node);
 			pos -= textLength; // Adjust position based on text collected
 			if (textLength > 0) {
 				// Adjust the position to skip over the collected text

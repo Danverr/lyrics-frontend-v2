@@ -29,7 +29,10 @@
 	import TaskItem from '@tiptap/extension-task-item';
 	import { Markdown } from 'tiptap-markdown';
 	import { createDebouncedCallback, type Undef } from '$lib/utils';
-	import { LyricsLine } from '$lib/components/novel-editor/extensions/lyrics-line/lyrics-line';
+	import {
+		LYRICS_LINE_NODE_NAME,
+		LyricsLine
+	} from '$lib/components/novel-editor/extensions/lyrics-line/lyrics-line';
 	import { api } from '$lib/api';
 	import BoldVowelsExtension from '$lib/components/novel-editor/extensions/lyrics-line/bold-vowels';
 	import { Skeleton } from '$lib/components/ui/skeleton';
@@ -184,7 +187,10 @@
 			document: doc
 		}),
 		Placeholder.configure({
-			placeholder: ({ node }: any) => {
+			placeholder: ({ node, editor }) => {
+				if (editor.storage.autocompletePlugin.isActive) {
+					return '';
+				}
 				if (node.type.name === 'heading') {
 					return `Заголовок ${node.attrs.level}`;
 				}
@@ -255,6 +261,10 @@
 						...editorProps
 					},
 					onUpdate: (e) => {
+						if (e.editor.isEditable && e.editor.isEmpty) {
+							e.editor.commands.insertContent({ type: LYRICS_LINE_NODE_NAME });
+						}
+
 						onUpdate(e.editor);
 						debouncedUpdates(e);
 					}
