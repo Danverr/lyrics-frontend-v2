@@ -14,7 +14,7 @@
 
 <style>
 	.sidebar {
-		@apply fixed top-0 mt-[68px] max-w-80 overflow-y-auto overflow-x-hidden p-4 pt-0;
+		@apply fixed top-0 z-[99999] mt-[68px] max-w-80;
 		max-height: calc(100vh - 68px);
 	}
 </style>

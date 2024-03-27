@@ -21,6 +21,7 @@ import SendIcon from '~icons/fluent/send-20-filled';
 import PeopleIcon from '~icons/ic/round-people-alt';
 import BanIcon from '~icons/fluent/prohibited-20-filled';
 import LogoutIcon from '~icons/lucide/log-out';
+import MenuIcon from '~icons/cil/menu';
 
 export {
 	PauseIcon,
@@ -43,5 +44,6 @@ export {
 	SendIcon,
 	PeopleIcon,
 	BanIcon,
-	LogoutIcon
+	LogoutIcon,
+	MenuIcon
 };
