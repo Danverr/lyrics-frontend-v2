@@ -20,6 +20,7 @@ import SpinnerIcon from '~icons/fluent/spinner-ios-16-filled';
 import SendIcon from '~icons/fluent/send-20-filled';
 import PeopleIcon from '~icons/ic/round-people-alt';
 import BanIcon from '~icons/fluent/prohibited-20-filled';
+import LogoutIcon from '~icons/lucide/log-out';
 
 export {
 	PauseIcon,
@@ -41,5 +42,6 @@ export {
 	SpinnerIcon,
 	SendIcon,
 	PeopleIcon,
-	BanIcon
+	BanIcon,
+	LogoutIcon
 };

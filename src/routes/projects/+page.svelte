@@ -1,5 +1,11 @@
 <script lang="ts">
-	import { DocumentIcon, PlusIcon, DeleteIcon, PeopleIcon } from '$lib/components/ui/icons';
+	import {
+		DocumentIcon,
+		PlusIcon,
+		DeleteIcon,
+		PeopleIcon,
+		LogoutIcon
+	} from '$lib/components/ui/icons';
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
 	import type { ProjectOut } from '$lib/api/api';
@@ -7,9 +13,12 @@
 	import { Button } from '$lib/components/ui/button';
 	import { toast } from 'svelte-sonner';
 	import { Skeleton } from '$lib/components/ui/skeleton';
-	import { FE_PROJECT_PAGE } from '$lib/constants';
+	import { FE_AUTH_PAGE, FE_PROJECT_PAGE } from '$lib/constants';
 	import { handleApiError } from '$lib/api/utils';
 	import { timeFromNow } from '$lib/utils';
+	import Portal from 'svelte-portal';
+	import { authTokenStore } from '$lib/stores/authTokenStore';
+	import { userInfoStore } from '$lib/stores/userInfoStore';
 
 	let projects: ProjectOut[] = [];
 	let dataLoaded = false;
@@ -62,7 +71,17 @@
 			handleApiError(e, 'Ошибка во время удаления проекта');
 		}
 	};
+
+	const logOut = () => {
+		$authTokenStore = '';
+		$userInfoStore = null;
+		document.location.href = FE_AUTH_PAGE;
+	};
 </script>
+
+<Portal target="#appBarRight">
+	<Button variant="ghost" size="icon" on:click={logOut}><LogoutIcon /></Button>
+</Portal>
 
 <div class="flex h-screen w-full flex-col items-center justify-center">
 	<div class="flex w-[480px] flex-col gap-4">
