@@ -9,6 +9,7 @@
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { FE_PROJECT_PAGE } from '$lib/constants';
 	import { handleApiError } from '$lib/api/utils';
+	import { timeFromNow } from '$lib/utils';
 
 	let projects: ProjectOut[] = [];
 	let dataLoaded = false;
@@ -16,6 +17,7 @@
 	onMount(async () => {
 		try {
 			projects = await api.projects.getProjects();
+			projects.sort((a, b) => (a.updated_at > b.updated_at ? -1 : 1));
 		} catch (e) {
 			handleApiError(e, 'Ошибка во время загрузки проектов');
 		} finally {
@@ -64,53 +66,59 @@
 </script>
 
 <div class="flex h-screen w-full flex-col items-center justify-center">
-	<div class="flex w-96 flex-col gap-4">
+	<div class="flex w-[480px] flex-col gap-4">
 		<div class="flex flex-row justify-between">
 			<H3>Проекты</H3>
 			<Button class="rounded-full" variant="outline" size="icon" on:click={createProject}>
 				<PlusIcon />
 			</Button>
 		</div>
-		<div class="-mx-2 box-content flex max-h-96 w-[388px] flex-col gap-1 overflow-y-scroll px-2">
+		<div class="-ml-4 -mr-[4px] box-content flex max-h-96 flex-col gap-1 overflow-y-scroll pl-4">
 			{#if !dataLoaded}
 				<Skeleton class="h-9 w-full" />
 				<Skeleton class="h-9 w-full" />
 				<Skeleton class="h-9 w-full" />
-			{/if}
-			{#if dataLoaded && projects.length === 0}
+			{:else if dataLoaded && projects.length === 0}
 				<P class="text-sm text-muted-foreground">
 					У вас пока нет проектов. Создайте новый или присоединитесь к существующему по ссылке от
 					владельца документа
 				</P>
-			{/if}
-			{#each [...projects].reverse() as project (project.project_id)}
-				<div class="flex justify-between">
-					<Button
-						variant="ghost"
-						class="-ml-2 flex w-full justify-start pl-2"
-						on:click={() => (window.location.href = `${FE_PROJECT_PAGE}/${project.project_id}`)}
-					>
-						<div class="flex items-center">
-							{#if project.is_owner}
-								<DocumentIcon class="mr-2 h-4 w-4" />
-							{:else}
-								<PeopleIcon class="mr-2 h-4 w-4" />
-							{/if}
-							{project.name}
+			{:else}
+				<div class="flex flex-col">
+					{#each projects as project (project.project_id)}
+						<div class="flex gap-2">
+							<Button
+								variant="ghost"
+								class="-ml-2 flex w-full justify-start pl-2"
+								on:click={() => (window.location.href = `${FE_PROJECT_PAGE}/${project.project_id}`)}
+							>
+								<div class="mr-auto flex items-center">
+									{#if project.is_owner}
+										<DocumentIcon class="mr-2 h-4 w-4" />
+									{:else}
+										<PeopleIcon class="mr-2 h-4 w-4" />
+									{/if}
+									{project.name}
+								</div>
+								<P
+									class="flex items-center whitespace-nowrap text-sm font-normal text-muted-foreground"
+								>
+									{timeFromNow(project.updated_at)}
+								</P>
+							</Button>
+							<Button
+								class="flex-shrink-0"
+								variant="ghost"
+								size="icon"
+								disabled={!project.is_owner}
+								on:click={() => deleteProject(project.project_id)}
+							>
+								<DeleteIcon />
+							</Button>
 						</div>
-					</Button>
-					{#if project.is_owner}
-						<Button
-							class="shrink-0"
-							variant="ghost"
-							size="icon"
-							on:click={() => deleteProject(project.project_id)}
-						>
-							<DeleteIcon />
-						</Button>
-					{/if}
+					{/each}
 				</div>
-			{/each}
+			{/if}
 		</div>
 	</div>
 </div>

@@ -2,6 +2,8 @@ import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { cubicOut } from 'svelte/easing';
 import type { TransitionConfig } from 'svelte/transition';
+import { formatRelative, type FormatRelativeOptions } from 'date-fns';
+import { ru } from 'date-fns/locale';
 
 // FOR SHITCODE ONLY
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -75,3 +77,10 @@ export function createDebouncedCallback<T extends (...args: any[]) => any>(
 		timeout = setTimeout(() => callback(...args), delay);
 	};
 }
+
+export const timeFromNow = (date: string | number | Date, options: FormatRelativeOptions = {}) => {
+	return formatRelative(date, new Date(), {
+		locale: ru,
+		...options
+	});
+};
