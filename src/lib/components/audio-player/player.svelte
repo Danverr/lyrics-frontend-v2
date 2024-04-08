@@ -16,7 +16,7 @@
 		Popover,
 		PopoverTrigger
 	} from '$lib/components/ui/popover';
-	import type { MusicOut } from '$lib/api/api';
+	import type { ProjectOut } from '$lib/api/api';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import HoverPlugin from 'wavesurfer.js/plugins/hover';
 	import type { Region } from 'wavesurfer.js/plugins/regions';
@@ -29,16 +29,25 @@
 		RepeatIcon,
 		MagnetIcon
 	} from '$lib/components/ui/icons';
+	import { api } from '$lib/api';
+	import { handleApiError } from '$lib/api/utils';
+	import type { Writable } from 'svelte/store';
+	import { toast } from 'svelte-sonner';
+	import Dropzone from 'svelte-file-dropzone';
 
 	const EPS = 0.000001; // For float numbers comparison
 
-	export let music: MusicOut;
-	export let onDelete: () => void;
-	export let onBpmChange: (bpm: number) => void;
+	export let project: Writable<ProjectOut>;
+	export let isEditable: boolean = true;
+	export let disableDelete: boolean = false;
+	export let onBpmUpdate: (bpm: number) => Promise<void>;
 
-	$: bpm = music.custom_bpm ?? music.bpm ?? 120;
+	$: bpm = $project.music?.custom_bpm ?? $project.music?.custom_bpm ?? 120;
 	$: trackTick = (4 * 60) / bpm; // 4 beats in seconds
-	$: fileName = decodeURIComponent(new URL(music.url).pathname.split('/').at(-1) ?? '');
+	$: musicUrl = $project.music?.url ?? '';
+	$: fileName = musicUrl
+		? decodeURIComponent(new URL(musicUrl).pathname.split('/').at(-1) ?? '')
+		: 'Неизвестное имя';
 	let isPlaying = false;
 	let loopEnabled = true;
 	let snapEnabled = true;
@@ -46,16 +55,10 @@
 	let offset = 0; // Offset to compensate silence in the beginning, sec
 	let endOffset = 0.067; // Magic const to compensate latency, sec
 	let ws: WaveSurfer;
+	let wsBpm: number;
 	let wsRegions: RegionsPlugin;
 	let wsLoaded = false;
-	let wsBpm = bpm;
 	let transitionStart = 0;
-
-	let bpmHandler = createDebouncedCallback(async () => {
-		if (ws && wsBpm !== bpm) {
-			initWavesurfer();
-		}
-	});
 
 	onMount(() => {
 		initWavesurfer();
@@ -76,6 +79,11 @@
 
 	const initWavesurfer = () => {
 		wsLoaded = false;
+
+		if (!musicUrl || !document) {
+			return;
+		}
+
 		document.querySelector('#waveform').innerHTML = '';
 
 		wsBpm = bpm;
@@ -83,7 +91,7 @@
 			container: '#waveform',
 			waveColor: '#999',
 			progressColor: '#ddd',
-			url: music.url,
+			url: musicUrl,
 			height: 128,
 			normalize: true,
 			hideScrollbar: false,
@@ -212,11 +220,8 @@
 		}
 	}
 
-	$: {
-		bpmHandler();
-		if (bpm !== music.custom_bpm) {
-			onBpmChange(bpm);
-		}
+	$: if (ws && bpm !== wsBpm) {
+		handleBpmUpdate();
 	}
 
 	const play = () => {
@@ -241,71 +246,141 @@
 	const toggleSnap = () => {
 		snapEnabled = !snapEnabled;
 	};
+
+	const handleFilesSelect = async (e: any) => {
+		if (e.detail.acceptedFiles.length !== 0) {
+			toast.promise(
+				api.music.uploadMusic($project.project_id, { music: e.detail.acceptedFiles[0] }),
+				{
+					loading: 'Загружаем трек...',
+					success: (res) => {
+						$project.music = res;
+						return 'Трек загружен';
+					},
+					error: 'Не удалось загрузить файл'
+				}
+			);
+		} else {
+			toast.error('Неверный формат файла');
+		}
+	};
+
+	const deleteMusic = async () => {
+		try {
+			await api.music.deleteMusic($project.project_id);
+			$project.music = null;
+		} catch (e) {
+			handleApiError(e, 'Не удалось удалить трек');
+		}
+	};
+
+	let defaultHandler = async (bpm: number) => {
+		if (!$project.music) {
+			return;
+		}
+
+		try {
+			await api.music.setMusicBpm($project.project_id, { custom_bpm: bpm });
+
+			if ($project.music) {
+				$project.music.custom_bpm = bpm;
+			}
+		} catch (e) {
+			handleApiError(e, 'Не удалось обновить BPM трека');
+		}
+	};
+
+	let handleBpmUpdate = createDebouncedCallback(async () => {
+		if (onBpmUpdate) {
+			await onBpmUpdate(bpm);
+		} else {
+			await defaultHandler(bpm);
+		}
+
+		initWavesurfer();
+	});
 </script>
 
-<div class="flex flex-col gap-3">
-	<div class="relative flex h-7 items-end justify-between">
-		<div class="flex h-full gap-1.5">
-			<Button class="h-full" variant="outline" size="icon" on:click={playPause}>
-				{#if isPlaying}
-					<PauseIcon />
-				{:else}
-					<PlayIcon />
+{#if musicUrl}
+	<div class="flex flex-col gap-3">
+		<div class="relative flex h-7 items-end justify-between">
+			<div class="flex h-full gap-1.5">
+				<Button class="h-full" variant="outline" size="icon" on:click={playPause}>
+					{#if isPlaying}
+						<PauseIcon />
+					{:else}
+						<PlayIcon />
+					{/if}
+				</Button>
+				<Button
+					class="h-full"
+					variant={loopEnabled ? 'default' : 'outline'}
+					size="icon"
+					on:click={toggleLoop}
+				>
+					<RepeatIcon />
+				</Button>
+				<Button
+					class="h-full"
+					variant={snapEnabled ? 'default' : 'outline'}
+					size="icon"
+					on:click={toggleSnap}
+				>
+					<MagnetIcon />
+				</Button>
+			</div>
+			<div class="absolute-center flex items-center gap-1">
+				<P class="text-overflow-ellipsis max-w-80 font-medium">
+					{fileName}
+				</P>
+				{#if !disableDelete}
+					<Popover>
+						<PopoverTrigger asChild let:builder>
+							<Button
+								builders={[builder]}
+								size="icon"
+								class="absolute right-0 translate-x-full"
+								variant="ghost"
+							>
+								<DeleteIcon />
+							</Button>
+						</PopoverTrigger>
+						<PopoverContent class="w-fit p-1.5">
+							<PopoverClose>
+								<Button size="icon" variant="destructive" on:click={deleteMusic}>
+									<TrashIcon />
+								</Button>
+							</PopoverClose>
+						</PopoverContent>
+					</Popover>
 				{/if}
-			</Button>
-			<Button
-				class="h-full"
-				variant={loopEnabled ? 'default' : 'outline'}
-				size="icon"
-				on:click={toggleLoop}
-			>
-				<RepeatIcon />
-			</Button>
-			<Button
-				class="h-full"
-				variant={snapEnabled ? 'default' : 'outline'}
-				size="icon"
-				on:click={toggleSnap}
-			>
-				<MagnetIcon />
-			</Button>
+			</div>
+			<div class="flex h-full items-center gap-2">
+				<Label class="text-muted-foreground">BPM</Label>
+				<Input
+					class="m-0 box-border h-full w-12 text-center"
+					type="number"
+					value={bpm}
+					on:input={(e) => (bpm = Number(e.target.value))}
+				/>
+			</div>
 		</div>
-		<div class="absolute-center flex items-center gap-1">
-			<P class="text-overflow-ellipsis max-w-80 font-medium">
-				{fileName}
-			</P>
-			<Popover>
-				<PopoverTrigger asChild let:builder>
-					<Button
-						builders={[builder]}
-						size="icon"
-						class="absolute right-0 translate-x-full"
-						variant="ghost"
-					>
-						<DeleteIcon />
-					</Button>
-				</PopoverTrigger>
-				<PopoverContent class="w-fit p-1.5">
-					<PopoverClose>
-						<Button size="icon" variant="destructive" on:click={onDelete}>
-							<TrashIcon />
-						</Button>
-					</PopoverClose>
-				</PopoverContent>
-			</Popover>
-		</div>
-		<div class="flex h-full items-center gap-2">
-			<Label class="text-muted-foreground">BPM</Label>
-			<Input
-				class="m-0 box-border h-full w-12 text-center"
-				type="number"
-				value={bpm}
-				on:input={(e) => (bpm = Number(e.target.value))}
-			/>
-		</div>
+		{#if !wsLoaded}
+			<Skeleton class="h-[185px] rounded-xl" />
+		{/if}
+		<div id="waveform" class={!wsLoaded ? 'hidden' : ''} />
 	</div>
-	{#if !wsLoaded}
-		<Skeleton class="h-[185px] rounded-xl" />
-	{/if}
-	<div id="waveform" class={!wsLoaded && 'hidden'} />
-</div>
+{:else}
+	<Dropzone
+		disabled={!isEditable}
+		accept="audio/*"
+		multiple={false}
+		disableDefaultStyles
+		containerClasses="flex flex-col items-center justify-center bg-background h-[237px] border-2 rounded-xl text-foreground border-dashed transition-all"
+		on:drop={handleFilesSelect}
+	>
+		<P class="text-muted-foreground">
+			Перетащите сюда файл или нажмите на область для загрузки трека
+		</P>
+	</Dropzone>
+{/if}

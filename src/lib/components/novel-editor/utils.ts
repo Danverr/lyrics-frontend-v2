@@ -1,16 +1,6 @@
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
 import { type Editor } from '@tiptap/core';
 import { type Node } from 'prosemirror-model';
 import { LYRICS_LINE_NODE_NAME } from '$lib/components/novel-editor/extensions/lyrics-line/lyrics-line';
-
-export const noop = () => {
-	// do nothing
-};
-
-export function cn(...inputs: ClassValue[]) {
-	return twMerge(clsx(inputs));
-}
 
 export function isValidUrl(url: string) {
 	try {

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import './styles.pcss';
 	import * as Y from 'yjs';
-	import { noop } from '$lib/components/novel-editor/utils.js';
+	import { noop } from '$lib/utils';
 	import { Editor, Extension, InputRule } from '@tiptap/core';
 	import type { EditorProps } from '@tiptap/pm/view';
 	import ImageResizer from '$lib/components/novel-editor/extensions/image/ImageResizer.svelte';
@@ -78,6 +78,10 @@
 	 * Defaults to true.
 	 */
 	export let isEditable = true;
+	/**
+	 * Tiptap token for editor. Used instead of token from API
+	 */
+	export let tiptapToken: string = '';
 	/**
 	 * The editor instance. Bind to it to get access to the editor.
 	 * @example
@@ -233,12 +237,15 @@
 	onMount(() => {
 		(async () => {
 			try {
-				let token = await api.tiptap.getTiptapToken(documentName);
+				let token = tiptapToken;
+				if (token === '') {
+					token = (await api.tiptap.getTiptapToken(documentName)).access_token;
+				}
 
 				provider = new TiptapCollabProvider({
 					name: documentName,
 					appId: 'ykod4jm5',
-					token: token.access_token,
+					token: token,
 					document: doc
 				});
 
@@ -287,7 +294,11 @@
 {/if}
 
 {#if !ready}
-	<Skeleton class="mt-2 h-36 w-full rounded-xl" />
+	<div>
+		<Skeleton class="mt-2 h-7 w-full rounded-l" />
+		<Skeleton class="mt-2 h-7 w-full rounded-l" />
+		<Skeleton class="mt-2 h-7 w-full rounded-l" />
+	</div>
 {/if}
 <div id="editor" class={className} bind:this={element}>
 	<slot />

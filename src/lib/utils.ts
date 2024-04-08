@@ -17,6 +17,14 @@ export type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+export const noop = () => {
+	// do nothing
+};
+
+export const asyncNoop = async () => {
+	// do nothing
+};
+
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }

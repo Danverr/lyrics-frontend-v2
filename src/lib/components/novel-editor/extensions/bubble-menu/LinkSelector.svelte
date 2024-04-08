@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { cn, getUrlFromString } from '$lib/components/novel-editor/utils.js';
+	import { getUrlFromString } from '$lib/components/novel-editor/utils.js';
+	import { cn } from '$lib/utils';
 	import type { Editor } from '@tiptap/core';
 	import { Check, Trash } from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
