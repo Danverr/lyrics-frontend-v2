@@ -37,7 +37,7 @@
 	});
 
 	onMount(() => {
-		let ambient = new Ambient();
+		let ambient = new Ambient({ retainAttributes: true });
 		ambient.mount();
 	});
 
