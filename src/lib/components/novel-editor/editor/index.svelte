@@ -223,13 +223,12 @@
 		}),
 		Markdown.configure({
 			html: false,
-			transformCopiedText: true
+			transformCopiedText: false
 		}),
 		AutocompletePlugin,
 		LyricsLine,
 		BoldVowelsExtension
 	];
-
 	const debouncedUpdates = createDebouncedCallback(async ({ editor }) => {
 		onDebouncedUpdate(editor);
 	}, debounceDuration);
@@ -274,6 +273,7 @@
 
 						onUpdate(e.editor);
 						debouncedUpdates(e);
+						console.log(e.editor);
 					}
 				});
 			} catch (e) {

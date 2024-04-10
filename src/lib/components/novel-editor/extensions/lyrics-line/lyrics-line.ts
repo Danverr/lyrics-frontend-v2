@@ -15,6 +15,8 @@ const countVowels = (text: string) => {
 export const LYRICS_LINE_NODE_NAME = 'lyricsLine';
 
 export const LyricsLine = Paragraph.extend({
+	priority: 1001,
+
 	name: LYRICS_LINE_NODE_NAME,
 
 	addAttributes() {
