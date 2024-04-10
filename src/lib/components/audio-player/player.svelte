@@ -34,6 +34,7 @@
 	import type { Writable } from 'svelte/store';
 	import { toast } from 'svelte-sonner';
 	import Dropzone from 'svelte-file-dropzone';
+	import { tick } from 'svelte';
 
 	const EPS = 0.000001; // For float numbers comparison
 
@@ -42,8 +43,8 @@
 	export let disableDelete: boolean = false;
 	export let onBpmUpdate: (bpm: number) => Promise<void>;
 
-	$: bpm = $project.music?.custom_bpm ?? $project.music?.custom_bpm ?? 120;
-	$: trackTick = (4 * 60) / bpm; // 4 beats in seconds
+	$: bpm = Math.max(1, Math.min($project.music?.custom_bpm ?? $project.music?.bpm ?? 120, 999));
+	$: trackTick = 4 * (60 / bpm); // 4 beats or 1 bar
 	$: musicUrl = $project.music?.url ?? '';
 	$: fileName = musicUrl
 		? decodeURIComponent(new URL(musicUrl).pathname.split('/').at(-1) ?? '')
@@ -59,9 +60,10 @@
 	let wsRegions: RegionsPlugin;
 	let wsLoaded = false;
 	let transitionStart = 0;
+	let mounted = false;
 
 	onMount(() => {
-		initWavesurfer();
+		mounted = true;
 	});
 
 	const extractOffset = (audioData: number[], duration: number) => {
@@ -78,13 +80,20 @@
 	};
 
 	const initWavesurfer = () => {
-		wsLoaded = false;
-
 		if (!musicUrl || !document) {
 			return;
 		}
 
-		document.querySelector('#waveform').innerHTML = '';
+		let el = document.querySelector('#waveform');
+		if (el) {
+			el.innerHTML = '';
+		} else {
+			return;
+		}
+
+		if (wsLoaded === true) {
+			wsLoaded = false;
+		}
 
 		wsBpm = bpm;
 		ws = WaveSurfer.create({
@@ -99,10 +108,9 @@
 			autoCenter: false,
 			plugins: [
 				TimelinePlugin.create({
-					formatTimeCallback: () => {
-						// let beat = Math.round(sec / msPerBeat);
-						// return beat % 4 == 0 ? beat.toString() : '';
-						return '';
+					formatTimeCallback: (sec) => {
+						let beat = Math.round(sec / trackTick);
+						return beat % 4 == 0 ? beat.toString() : '';
 					},
 					primaryLabelSpacing: 4,
 					secondaryLabelSpacing: 1,
@@ -127,7 +135,6 @@
 			const decodedData = ws.getDecodedData();
 			if (decodedData) {
 				offset = extractOffset(decodedData.getChannelData(0), duration);
-				console.log('OFFSET FOUND:', offset);
 			}
 		});
 
@@ -220,8 +227,14 @@
 		}
 	}
 
+	$: if (musicUrl && mounted) {
+		tick().then(() => {
+			initWavesurfer();
+		});
+	}
+
 	$: if (ws && bpm !== wsBpm) {
-		handleBpmUpdate();
+		handleBpmUpdateDebounced();
 	}
 
 	const play = () => {
@@ -274,7 +287,7 @@
 		}
 	};
 
-	let defaultHandler = async (bpm: number) => {
+	const defaultHandler = async (bpm: number) => {
 		if (!$project.music) {
 			return;
 		}
@@ -290,7 +303,7 @@
 		}
 	};
 
-	let handleBpmUpdate = createDebouncedCallback(async () => {
+	const handleBpmUpdate = async () => {
 		if (onBpmUpdate) {
 			await onBpmUpdate(bpm);
 		} else {
@@ -298,10 +311,12 @@
 		}
 
 		initWavesurfer();
-	});
+	};
+
+	const handleBpmUpdateDebounced = createDebouncedCallback(handleBpmUpdate);
 </script>
 
-{#if musicUrl}
+{#if $project.music?.url}
 	<div class="flex flex-col gap-3">
 		<div class="relative flex h-7 items-end justify-between">
 			<div class="flex h-full gap-1.5">
@@ -358,7 +373,7 @@
 			<div class="flex h-full items-center gap-2">
 				<Label class="text-muted-foreground">BPM</Label>
 				<Input
-					class="m-0 box-border h-full w-12 text-center"
+					class="m-0 box-border h-full w-12 p-0 text-center"
 					type="number"
 					value={bpm}
 					on:input={(e) => (bpm = Number(e.target.value))}

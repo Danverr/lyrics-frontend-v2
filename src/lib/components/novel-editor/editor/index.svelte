@@ -273,7 +273,6 @@
 
 						onUpdate(e.editor);
 						debouncedUpdates(e);
-						console.log(e.editor);
 					}
 				});
 			} catch (e) {

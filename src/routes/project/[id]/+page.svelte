@@ -26,7 +26,6 @@
 
 	$: if ($project) {
 		isEditable = $project.grant_level !== GrantLevel.READ_ONLY;
-		console.log(isEditable);
 	}
 
 	let handleTextNameUpdate = createDebouncedCallback(async () => {
