@@ -35,8 +35,10 @@
 	import { toast } from 'svelte-sonner';
 	import Dropzone from 'svelte-file-dropzone';
 	import { tick } from 'svelte';
+	import { mode } from 'mode-watcher';
 
 	const EPS = 0.000001; // For float numbers comparison
+	const LOOP_EPS = 0.05; // For loop out/in event
 
 	export let project: Writable<ProjectOut>;
 	export let isEditable: boolean = true;
@@ -59,8 +61,17 @@
 	let wsBpm: number;
 	let wsRegions: RegionsPlugin;
 	let wsLoaded = false;
-	let transitionStart = 0;
 	let mounted = false;
+	let transitionStart = 0;
+
+	let regionColor = '#CC8C3469';
+
+	$: waveColor = $mode === 'light' ? '#c0c0c0' : '#999';
+	$: progressColor = $mode === 'light' ? '#8d8d8d' : '#ddd';
+
+	$: if (mounted && $mode) {
+		initWavesurfer();
+	}
 
 	onMount(() => {
 		mounted = true;
@@ -96,10 +107,12 @@
 		}
 
 		wsBpm = bpm;
+		isPlaying = false;
+
 		ws = WaveSurfer.create({
 			container: '#waveform',
-			waveColor: '#999',
-			progressColor: '#ddd',
+			waveColor: waveColor,
+			progressColor: progressColor,
 			url: musicUrl,
 			height: 128,
 			normalize: true,
@@ -113,19 +126,21 @@
 						return beat % 4 == 0 ? beat.toString() : '';
 					},
 					primaryLabelSpacing: 4,
+					primaryLabelInterval: 4 * trackTick,
 					secondaryLabelSpacing: 1,
+					secondaryLabelInterval: trackTick,
 					timeInterval: trackTick
 				}),
 				Minimap.create({
 					height: 20,
-					waveColor: '#999',
-					progressColor: '#ddd',
+					waveColor: waveColor,
+					progressColor: progressColor,
 					normalize: true,
 					dragToSeek: true
 				}),
 				ZoomPlugin.create({
 					deltaThreshold: 5,
-					scale: 0.25
+					scale: 0.1
 				}),
 				HoverPlugin.create({})
 			]
@@ -145,7 +160,7 @@
 		wsRegions = ws.registerPlugin(RegionsPlugin.create());
 
 		wsRegions.enableDragSelection({
-			color: '#CC8C3469'
+			color: regionColor
 		});
 
 		wsRegions.on('region-updated', (region) => {
@@ -161,35 +176,44 @@
 		});
 
 		wsRegions.on('region-in', (region) => {
+			console.log('Transition', Date.now() - transitionStart - 1000 * (region.end - region.start));
+			transitionStart = Date.now();
 			activeRegion = region;
-			console.log('Transition', new Date().getTime() - transitionStart);
 		});
 		wsRegions.on('region-out', (region) => {
-			if (activeRegion?.id === region.id) {
-				if (loopEnabled && isPlaying) {
-					transitionStart = new Date().getTime();
-					ws.setTime(activeRegion.start);
-				} else {
-					activeRegion = undefined;
-				}
+			let time = ws.getCurrentTime();
+			let inRegion = region.start - LOOP_EPS <= time && time <= region.end + LOOP_EPS;
+			console.log('Diff', (time - region.end) * 1000);
+
+			if (inRegion && loopEnabled && isPlaying) {
+				ws.setTime(region.start);
+			} else {
+				activeRegion = undefined;
 			}
 		});
 
 		wsRegions.on('region-clicked', (region, e) => {
 			e.stopPropagation();
 			loopEnabled = true;
-			activeRegion = region;
 			ws.setTime(region.start);
-			region.setOptions({ color: 'rgba(208,126,14,0.41)' });
 		});
 		wsRegions.on('region-double-clicked', (region, e) => {
 			e.stopPropagation();
+			ws.pause();
 			activeRegion = undefined;
-			pause();
 			region.remove();
 		});
 
 		ws.on('finish', () => {
+			if (loopEnabled) {
+				ws.play();
+			}
+		});
+
+		ws.on('play', () => {
+			isPlaying = true;
+		});
+		ws.on('pause', () => {
 			isPlaying = false;
 		});
 	};
@@ -215,8 +239,6 @@
 				end: end - endOffset
 			});
 		}
-
-		activeRegion = region;
 	};
 
 	$: if (ws && wsRegions) {
@@ -236,21 +258,6 @@
 	$: if (ws && bpm !== wsBpm) {
 		handleBpmUpdateDebounced();
 	}
-
-	const play = () => {
-		isPlaying = true;
-		ws.play();
-	};
-
-	const pause = () => {
-		isPlaying = false;
-		ws.pause();
-	};
-
-	const playPause = () => {
-		isPlaying = !isPlaying;
-		ws.playPause();
-	};
 
 	const toggleLoop = () => {
 		loopEnabled = !loopEnabled;
@@ -320,7 +327,12 @@
 	<div class="flex flex-col gap-3">
 		<div class="relative flex h-7 items-end justify-between">
 			<div class="flex h-full gap-1.5">
-				<Button class="h-full" variant="outline" size="icon" on:click={playPause}>
+				<Button
+					class="h-full"
+					variant={isPlaying ? 'default' : 'outline'}
+					size="icon"
+					on:click={() => ws.playPause()}
+				>
 					{#if isPlaying}
 						<PauseIcon />
 					{:else}
