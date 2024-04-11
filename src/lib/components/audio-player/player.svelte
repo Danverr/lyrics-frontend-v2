@@ -36,6 +36,7 @@
 	import Dropzone from 'svelte-file-dropzone';
 	import { tick } from 'svelte';
 	import { mode } from 'mode-watcher';
+	import { getPlayerDataStore } from '$lib/stores/playerDataStore';
 
 	const EPS = 0.000001; // For float numbers comparison
 	const LOOP_EPS = 0.05; // For loop out/in event
@@ -51,6 +52,7 @@
 	$: fileName = musicUrl
 		? decodeURIComponent(new URL(musicUrl).pathname.split('/').at(-1) ?? '')
 		: 'Неизвестное имя';
+	$: playerDataStore = getPlayerDataStore(fileName);
 	let isPlaying = false;
 	let loopEnabled = true;
 	let snapEnabled = true;
@@ -64,10 +66,9 @@
 	let mounted = false;
 	let transitionStart = 0;
 
-	let regionColor = '#CC8C3469';
-
 	$: waveColor = $mode === 'light' ? '#c0c0c0' : '#999';
 	$: progressColor = $mode === 'light' ? '#8d8d8d' : '#ddd';
+	let regionColor = '#CC8C3469';
 
 	$: if (mounted && $mode) {
 		initWavesurfer();
@@ -151,6 +152,14 @@
 			if (decodedData) {
 				offset = extractOffset(decodedData.getChannelData(0), duration);
 			}
+
+			if ($playerDataStore.region) {
+				wsRegions.addRegion({
+					start: $playerDataStore.region.start,
+					end: $playerDataStore.region.end,
+					color: regionColor
+				});
+			}
 		});
 
 		ws.on('ready', () => {
@@ -163,22 +172,27 @@
 			color: regionColor
 		});
 
-		wsRegions.on('region-updated', (region) => {
-			regionUpdate(region);
-		});
 		wsRegions.on('region-created', (region) => {
 			for (let reg of wsRegions.getRegions()) {
 				if (reg.id !== region.id) {
 					reg.remove();
 				}
 			}
+			activeRegion = region;
+			regionUpdate(region);
+		});
+		wsRegions.on('region-removed', (region) => {
+			if (activeRegion?.id === region.id) {
+				activeRegion = undefined;
+			}
+		});
+		wsRegions.on('region-updated', (region) => {
 			regionUpdate(region);
 		});
 
 		wsRegions.on('region-in', (region) => {
 			console.log('Transition', Date.now() - transitionStart - 1000 * (region.end - region.start));
 			transitionStart = Date.now();
-			activeRegion = region;
 		});
 		wsRegions.on('region-out', (region) => {
 			let time = ws.getCurrentTime();
@@ -187,8 +201,6 @@
 
 			if (inRegion && loopEnabled && isPlaying) {
 				ws.setTime(region.start);
-			} else {
-				activeRegion = undefined;
 			}
 		});
 
@@ -200,7 +212,7 @@
 		wsRegions.on('region-double-clicked', (region, e) => {
 			e.stopPropagation();
 			ws.pause();
-			activeRegion = undefined;
+			$playerDataStore.region = null;
 			region.remove();
 		});
 
@@ -230,7 +242,6 @@
 
 			if (end - start < EPS) {
 				region.remove();
-				activeRegion = undefined;
 				return;
 			}
 
@@ -239,6 +250,11 @@
 				end: end - endOffset
 			});
 		}
+
+		$playerDataStore.region = {
+			start: region.start,
+			end: region.end
+		};
 	};
 
 	$: if (ws && wsRegions) {

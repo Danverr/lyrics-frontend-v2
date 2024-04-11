@@ -121,7 +121,7 @@
 								<P
 									class="flex items-center whitespace-nowrap text-sm font-normal text-muted-foreground"
 								>
-									{timeFromNow(project.updated_at)}
+									{timeFromNow(project.updated_at.replace('Z', '') + 'Z')}
 								</P>
 							</Button>
 							<Button

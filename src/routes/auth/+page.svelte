@@ -24,7 +24,7 @@
 	import { handleApiError } from '$lib/api/utils';
 
 	export const formSchema = z.object({
-		email: z.string().min(1).max(64).email('Неверный email'),
+		email: z.string().email('Неверный email'),
 		code: z.coerce.number()
 	});
 

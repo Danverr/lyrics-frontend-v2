@@ -206,7 +206,6 @@
 		TiptapUnderline,
 		TextStyle,
 		Typography,
-		Color,
 		Highlight.configure({
 			multicolor: true
 		}),
