@@ -79,7 +79,7 @@
 	};
 </script>
 
-<Portal target="#appBarRight">
+<Portal target="#appBarLeft">
 	<Button variant="ghost" size="icon" on:click={logOut}><LogoutIcon /></Button>
 </Portal>
 

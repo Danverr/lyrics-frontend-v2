@@ -10,7 +10,6 @@
 	import { createDebouncedCallback } from '$lib/utils';
 	import type { Writable } from 'svelte/store';
 	import { handleApiError } from '$lib/api/utils';
-	import { Toggle } from '$lib/components/ui/toggle';
 
 	export let project: Writable<ProjectOut>;
 	export let isEditable: boolean;
@@ -55,7 +54,7 @@
 </script>
 
 <Portal target="#appBarLeft">
-	<Button variant="ghost" size="icon" on:click={toggleOpen}>
+	<Button class="[:has(&)]:-order-1" variant="ghost" size="icon" on:click={toggleOpen}>
 		<MenuIcon />
 	</Button>
 </Portal>
