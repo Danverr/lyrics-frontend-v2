@@ -39,7 +39,7 @@
 	import { getPlayerDataStore } from '$lib/stores/playerDataStore';
 
 	const EPS = 0.000001; // For float numbers comparison
-	const LOOP_EPS = 0.05; // For loop out/in event
+	const LOOP_EPS = 0.1; // For loop out/in event
 
 	export let project: Writable<ProjectOut>;
 	export let isEditable: boolean = true;
