@@ -1,3 +1,3 @@
 # Lirix - онлайн редактор для текстов песен
 
-Актуальный адрес - [lirix.xyz](lirix.xyz)
+Актуальный адрес - [lirix.xyz](www.lirix.xyz)
